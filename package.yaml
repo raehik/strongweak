@@ -67,8 +67,8 @@ dependencies:
 - base >= 4.14 && < 5
 - vector-sized ^>= 1.5.0
 - refined ^>= 0.6.3
-- prettyprinter # TODO
-- validation
+- prettyprinter ^>= 1.7.1
+- validation ^>= 1.1.2
 
 library:
   source-dirs: src
