@@ -71,7 +71,7 @@ instance (KnownNat n, Typeable a, Show a) => Strengthen [a] (Vector n a) where
           Just s  -> Success s
 
 -- | Obtain a refined type by applying its associated refinement.
-instance (Predicate p a, Typeable a, Show a) => Strengthen a (Refined p a) where
+instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen a (Refined p a) where
     strengthen a =
         case refine a of
           Left  err -> strengthenErrorBase a (show err)

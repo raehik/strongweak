@@ -1,2 +1,7 @@
 resolver: nightly-2022-03-30
 packages: [.]
+
+extra-deps:
+# need my predicate polykind change because of a behaviour change
+- git: https://github.com/raehik/refined
+  commit: 952e0348348aaf11c8b93c6e1ac6d33a0cbbb6b1
