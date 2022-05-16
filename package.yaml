@@ -1,0 +1,76 @@
+name: strongweak
+version: 0.1.0
+synopsis: Convert between strong and weak representations of types
+description: Please see README.md.
+extra-source-files:
+- README.md
+- CHANGELOG.md
+category: Data
+tested-with: GHC ==9.2.2
+license: MIT
+license-file: LICENSE
+
+github: raehik/strongweak
+maintainer: Ben Orchard <thefirstmuffinman@gmail.com>
+author: Ben Orchard
+
+# TODO 2022-04-22 This will be supported eventually - I looked just now, and
+# there was a fix 10 hours ago! But it'll take a while to trickle down into an
+# hpack release, and then that release in Stack.
+language: GHC2021
+
+# mostly Alexis King's 2018 recommended defaults
+# (most can be replaced with GHC 9.2's GHC2021 language extension
+default-extensions:
+# essential
+- EmptyCase
+- FlexibleContexts
+- FlexibleInstances
+- InstanceSigs
+- MultiParamTypeClasses
+- PolyKinds
+- LambdaCase
+
+# deriving-related
+- DerivingStrategies
+- StandaloneDeriving
+- DeriveAnyClass
+- DeriveGeneric
+- DeriveDataTypeable
+- DeriveFunctor
+- DeriveFoldable
+- DeriveTraversable
+- DeriveLift
+
+# essential syntax but too recent
+- ImportQualifiedPost # 8.10
+- StandaloneKindSignatures # 8.10
+- DerivingVia # 8.6
+
+# less essential but still gimmes
+- RoleAnnotations
+- TypeApplications
+- DataKinds
+- TypeFamilies
+- TypeOperators
+- BangPatterns
+- GADTs
+- DefaultSignatures
+- RankNTypes
+
+# extra
+- UndecidableInstances # honestly fine but...
+- MagicHash # pretty much syntactic, but too weird
+- ScopedTypeVariables # probs dangerous to have as default
+
+dependencies:
+- base >= 4.14 && < 5
+- vector-sized ^>= 1.5.0
+- refined ^>= 0.6.3
+- prettyprinter # TODO
+- validation
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
