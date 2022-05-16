@@ -28,6 +28,11 @@ representation using functional dependencies.
 -}
 class Strengthen w s | s -> w where strengthen :: w -> Validation (NonEmpty StrengthenError) s
 
+-- | 'strengthen' with reordered type variables for more convenient visible type
+--   application.
+strengthen' :: forall s w. Strengthen w s => w -> Validation (NonEmpty StrengthenError) s
+strengthen' = strengthen
+
 data StrengthenError
   = StrengthenErrorBase String String String String
   -- ^ weak type, strong type, weak value, msg
@@ -40,6 +45,7 @@ data StrengthenError
 instance Show StrengthenError where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty
 
+-- TODO shorten value if over e.g. 50 chars. e.g. @[0,1,2,...,255] -> FAIL@
 instance Pretty StrengthenError where
     pretty = \case
       StrengthenErrorBase wt st wv msg ->
