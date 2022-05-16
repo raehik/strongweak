@@ -36,11 +36,15 @@ strengthen' = strengthen
 data StrengthenError
   = StrengthenErrorBase String String String String
   -- ^ weak type, strong type, weak value, msg
-  | StrengthenErrorField String String String String String String StrengthenError
+
+  | StrengthenErrorField String String String String (Either Natural String) (Either Natural String) StrengthenError
   -- ^ weak datatype name, strong datatype name,
   --   weak constructor name, strong constructor name,
   --   weak field name, strong field name,
   --   error
+  --
+  -- Fields use their record name if present, else their index in the
+  -- constructor (from 0).
 
 instance Show StrengthenError where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty
@@ -53,7 +57,8 @@ instance Pretty StrengthenError where
              , pretty wv<+>"->"<+>"FAIL"
              , pretty msg ]
       StrengthenErrorField dw _ds cw _cs sw _ss err ->
-        nest 1 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>line<>pretty err
+        let sw' = either show id sw
+        in  nest 1 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw'<>line<>pretty err
 
 strengthenErrorBase
     :: forall s w. (Typeable w, Show w, Typeable s)
