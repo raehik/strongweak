@@ -37,11 +37,11 @@ data StrengthenError
   = StrengthenErrorBase String String String String
   -- ^ weak type, strong type, weak value, msg
 
-  | StrengthenErrorField String String String String (Either Natural String) (Either Natural String) StrengthenError
+  | StrengthenErrorField String String String String (Either Natural String) (Either Natural String) (NonEmpty StrengthenError)
   -- ^ weak datatype name, strong datatype name,
   --   weak constructor name, strong constructor name,
   --   weak field name, strong field name,
-  --   error
+  --   errors
   --
   -- Fields use their record name if present, else their index in the
   -- constructor (from 0).
@@ -56,19 +56,21 @@ instance Pretty StrengthenError where
         vsep [ pretty wt<+>"->"<+>pretty st
              , pretty wv<+>"->"<+>"FAIL"
              , pretty msg ]
-      StrengthenErrorField dw _ds cw _cs sw _ss err ->
+      StrengthenErrorField dw _ds cw _cs sw _ss es ->
         let sw' = either show id sw
-        in  nest 1 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw'<>line<>pretty err
+        in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw'<>line<>strengthenErrorPretty es
+
+-- mutually recursive with its 'Pretty' instance. safe, but a bit confusing -
+-- clean up
+strengthenErrorPretty :: NonEmpty StrengthenError -> Doc a
+strengthenErrorPretty = vsep . map go . Foldable.toList
+  where go e = "-"<+>indent 0 (pretty e)
 
 strengthenErrorBase
     :: forall s w. (Typeable w, Show w, Typeable s)
     => w -> String -> Validation (NonEmpty StrengthenError) s
 strengthenErrorBase w msg = Failure (e :| [])
   where e = StrengthenErrorBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
-
-strengthenErrorPretty :: NonEmpty StrengthenError -> Doc a
-strengthenErrorPretty = vsep . map go . Foldable.toList
-  where go e = "-"<+>indent 0 (pretty e)
 
 -- | Strengthen each element of a list.
 instance Strengthen w s => Strengthen [w] [s] where

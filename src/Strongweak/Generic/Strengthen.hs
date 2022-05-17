@@ -57,13 +57,18 @@ instance GStrengthenS (S1 mw (Rec0 w)) (S1 ms (Rec0 w)) where
     gstrengthenS _ _ _ _ _ = Success . M1 . unM1
 
 -- | Strengthen a field using the existing 'Strengthen' instance.
+--
+-- On strengthen failure, the errors are annotated with all the datatype
+-- information we've hoarded. The upshot is that if you strengthen a type with
+-- lots of types inside it, all with generically-derived 'Strengthen' instances,
+-- you'll get a precise zoom-in of exactly where each error occurred.
 instance {-# OVERLAPS #-} (Strengthen w s, Selector mw, Selector ms) => GStrengthenS (S1 mw (Rec0 w)) (S1 ms (Rec0 s)) where
     gstrengthenS dw ds cw cs n (M1 (K1 w)) =
         case strengthen w of
-          Failure (e :| es) ->
+          Failure es ->
             let sw = selNameElseIndex @mw n
                 ss = selNameElseIndex @ms n
-            in  Failure $ StrengthenErrorField dw ds cw cs sw ss e :| es
+            in  Failure $ StrengthenErrorField dw ds cw cs sw ss es :| []
           Success s   -> Success $ M1 $ K1 s
 
 -- On the type level, a 'Maybe Symbol' is stored for record names. But the
