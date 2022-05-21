@@ -33,6 +33,8 @@ class Strengthen w s | s -> w where strengthen :: w -> Validation (NonEmpty Stre
 strengthen' :: forall s w. Strengthen w s => w -> Validation (NonEmpty StrengthenError) s
 strengthen' = strengthen
 
+-- | Strengthen error data type. Don't use these constructors directly, use
+--   the existing helper functions.
 data StrengthenError
   = StrengthenErrorBase String String String String
   -- ^ weak type, strong type, weak value, msg

@@ -80,3 +80,60 @@ library
     , validation >=1.1.2 && <1.2
     , vector-sized >=1.5.0 && <1.6
   default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Common
+      Strongweak.LawsSpec
+      Strongweak.StrengthenSpec
+      Paths_strongweak
+  hs-source-dirs:
+      test
+  default-extensions:
+      EmptyCase
+      FlexibleContexts
+      FlexibleInstances
+      InstanceSigs
+      MultiParamTypeClasses
+      PolyKinds
+      LambdaCase
+      DerivingStrategies
+      StandaloneDeriving
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveDataTypeable
+      DeriveFunctor
+      DeriveFoldable
+      DeriveTraversable
+      DeriveLift
+      ImportQualifiedPost
+      StandaloneKindSignatures
+      DerivingVia
+      RoleAnnotations
+      TypeApplications
+      DataKinds
+      TypeFamilies
+      TypeOperators
+      BangPatterns
+      GADTs
+      DefaultSignatures
+      RankNTypes
+      UndecidableInstances
+      MagicHash
+      ScopedTypeVariables
+  build-tool-depends:
+      hspec-discover:hspec-discover >=2.7 && <2.10
+  build-depends:
+      QuickCheck >=2.14.2 && <2.15
+    , base >=4.14 && <5
+    , generic-random >=1.5.0.1 && <1.6
+    , hspec >=2.7 && <2.10
+    , prettyprinter >=1.7.1 && <1.8
+    , quickcheck-instances >=0.3.26 && <0.4
+    , refined >=0.6.3 && <0.7
+    , strongweak
+    , validation >=1.1.2 && <1.2
+    , vector-sized >=1.5.0 && <1.6
+  default-language: Haskell2010
