@@ -45,6 +45,7 @@ data StrengthenError
   --
   -- Fields use their record name if present, else their index in the
   -- constructor (from 0).
+    deriving stock Eq
 
 instance Show StrengthenError where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty

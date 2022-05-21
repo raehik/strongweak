@@ -78,7 +78,9 @@ selNameElseIndex :: forall s. Selector s => Natural -> Either Natural String
 selNameElseIndex n = case selName' @s of "" -> Left n
                                          s  -> Right s
 
--- | Strengthen product types by strengthening left, then right.
+-- | Strengthen product types by strengthening left and right.
+--
+-- Note that this is applicative, not monadic.
 instance (GStrengthenS lw ls, GStrengthenS rw rs) => GStrengthenS (lw :*: rw) (ls :*: rs) where
     gstrengthenS dw ds cw cs n (l :*: r) = do
         l' <- gstrengthenS dw ds cw cs n     l
@@ -97,7 +99,7 @@ conName' = conName @c undefined
 datatypeName' :: forall d. Datatype d => String
 datatypeName' = datatypeName @d undefined
 
--- | 'datatypeName' without the value (only used as a proxy). Lets us push our
+-- | 'selName' without the value (only used as a proxy). Lets us push our
 --   'undefined's into one place.
 selName' :: forall s. Selector s => String
 selName' = selName @s undefined
