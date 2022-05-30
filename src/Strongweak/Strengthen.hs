@@ -35,18 +35,26 @@ strengthen' = strengthen
 
 -- | Strengthen error data type. Don't use these constructors directly, use
 --   the existing helper functions.
+--
+-- Field indices are from 0 in the respective constructor. Field names are
+-- provided if present.
 data StrengthenError
-  = StrengthenErrorBase String String String String
-  -- ^ weak type, strong type, weak value, msg
+  = StrengthenErrorBase
+        String -- ^ weak   type
+        String -- ^ strong type
+        String -- ^ weak value
+        String -- ^ msg
 
-  | StrengthenErrorField String String String String (Either Natural String) (Either Natural String) (NonEmpty StrengthenError)
-  -- ^ weak datatype name, strong datatype name,
-  --   weak constructor name, strong constructor name,
-  --   weak field name, strong field name,
-  --   errors
-  --
-  -- Fields use their record name if present, else their index in the
-  -- constructor (from 0).
+  | StrengthenErrorField
+        String                      -- ^ weak   datatype name
+        String                      -- ^ strong datatype name
+        String                      -- ^ weak   constructor name
+        String                      -- ^ strong constructor name
+        Natural                     -- ^ weak   field index
+        (Maybe String)              -- ^ weak   field name (if present)
+        Natural                     -- ^ strong field index
+        (Maybe String)              -- ^ strong field name (if present)
+        (NonEmpty StrengthenError)  -- ^ errors
     deriving stock Eq
 
 instance Show StrengthenError where
@@ -59,9 +67,9 @@ instance Pretty StrengthenError where
         vsep [ pretty wt<+>"->"<+>pretty st
              , pretty wv<+>"->"<+>"FAIL"
              , pretty msg ]
-      StrengthenErrorField dw _ds cw _cs sw _ss es ->
-        let sw' = either show id sw
-        in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw'<>line<>strengthenErrorPretty es
+      StrengthenErrorField dw _ds cw _cs iw fw _is _fs es ->
+        let sw = maybe (show iw) id fw
+        in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>line<>strengthenErrorPretty es
 
 -- mutually recursive with its 'Pretty' instance. safe, but a bit confusing -
 -- clean up

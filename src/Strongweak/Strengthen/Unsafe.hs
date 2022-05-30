@@ -35,6 +35,7 @@ instance UnsafeStrengthen w s => UnsafeStrengthen [w] [s] where
     unsafeStrengthen = map unsafeStrengthen
 
 -- | Obtain a sized vector by unsafely assuming the size of a plain list.
+--   Extremely unsafe.
 instance UnsafeStrengthen [a] (Vector n a) where
     unsafeStrengthen = Data.Vector.Generic.Sized.Internal.Vector . Data.Vector.fromList
 
@@ -42,13 +43,15 @@ instance UnsafeStrengthen [a] (Vector n a) where
 instance UnsafeStrengthen a (Refined p a) where
     unsafeStrengthen = reallyUnsafeRefine
 
--- Coerce 'Natural's into Haskell's bounded unsigned numeric types.
+-- Coerce 'Natural's into Haskell's bounded unsigned numeric types. Poorly-sized
+-- values will safely overflow according to the type's behaviour.
 instance UnsafeStrengthen Natural Word8  where unsafeStrengthen = fromIntegral
 instance UnsafeStrengthen Natural Word16 where unsafeStrengthen = fromIntegral
 instance UnsafeStrengthen Natural Word32 where unsafeStrengthen = fromIntegral
 instance UnsafeStrengthen Natural Word64 where unsafeStrengthen = fromIntegral
 
--- Coerce 'Integer's into Haskell's bounded signed numeric types.
+-- Coerce 'Integer's into Haskell's bounded signed numeric types. Poorly-sized
+-- values will safely overflow according to the type's behaviour.
 instance UnsafeStrengthen Integer Int8   where unsafeStrengthen = fromIntegral
 instance UnsafeStrengthen Integer Int16  where unsafeStrengthen = fromIntegral
 instance UnsafeStrengthen Integer Int32  where unsafeStrengthen = fromIntegral

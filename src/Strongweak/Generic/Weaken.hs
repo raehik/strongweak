@@ -1,3 +1,5 @@
+-- | Weakening for generic data types.
+
 module Strongweak.Generic.Weaken where
 
 import Strongweak.Weaken

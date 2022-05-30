@@ -1,14 +1,13 @@
-{- |
-The generic derivation is split into 3 classes, dealing with different layers of
-a Haskell data type: datatype, constructor and selector. At each point, we
-gather up information about the type and push on. Strengthening occurs at
-selectors. If a strengthening fails, the gathered information is pushed into an
-error that wraps the original error. A field's record name will be used if
-present, else we use its index in its constructor from 0.
+{- | Strengthening for generic data types.
+
+The generic derivation is split into 3 classes, each dealing with a different
+layer of a generic Haskell data type: datatype (D), constructor (C) and selector
+(S). At each point, we gather up information about the type and push on.
+Strengthening occurs at selectors. If a strengthening fails, the gathered
+information is pushed into an error that wraps the original error.
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE ApplicativeDo #-}
 
 module Strongweak.Generic.Strengthen where
 
@@ -18,6 +17,7 @@ import Data.List.NonEmpty
 import GHC.Generics
 
 import Numeric.Natural
+import Control.Applicative ( liftA2 )
 
 strengthenGeneric
     :: (Generic w, Generic s, GStrengthenD (Rep w) (Rep s))
@@ -38,7 +38,7 @@ instance GStrengthenC V1 V1 where
     gstrengthenC _ _ = Success
 
 instance (GStrengthenS w s, Constructor cw, Constructor cs) => GStrengthenC (C1 cw w) (C1 cs s) where
-    gstrengthenC dw ds = fmap M1 . gstrengthenS dw ds (conName' @cw) (conName' @cs) 0 . unM1
+    gstrengthenC dw ds = fmap M1 . snd . gstrengthenS dw ds (conName' @cw) (conName' @cs) 0 . unM1
 
 -- | Strengthen sum types by strengthening left or right.
 instance (GStrengthenC lw ls, GStrengthenC rw rs) => GStrengthenC (lw :+: rw) (ls :+: rs) where
@@ -46,15 +46,15 @@ instance (GStrengthenC lw ls, GStrengthenC rw rs) => GStrengthenC (lw :+: rw) (l
                                R1 r -> R1 <$> gstrengthenC dw ds r
 
 class GStrengthenS w s where
-    gstrengthenS :: String -> String -> String -> String -> Natural -> w p -> Validation (NonEmpty StrengthenError) (s p)
+    gstrengthenS :: String -> String -> String -> String -> Natural -> w p -> (Natural, Validation (NonEmpty StrengthenError) (s p))
 
 -- | Nothing to do for empty constructors.
 instance GStrengthenS U1 U1 where
-    gstrengthenS _ _ _ _ _ = Success
+    gstrengthenS _ _ _ _ n x = (n, Success x)
 
 -- | Special case: if source and target types are equal, copy the value through.
 instance GStrengthenS (S1 mw (Rec0 w)) (S1 ms (Rec0 w)) where
-    gstrengthenS _ _ _ _ _ = Success . M1 . unM1
+    gstrengthenS _ _ _ _ n x = (n, Success (M1 (unM1 x)))
 
 -- | Strengthen a field using the existing 'Strengthen' instance.
 --
@@ -66,26 +66,29 @@ instance {-# OVERLAPS #-} (Strengthen w s, Selector mw, Selector ms) => GStrengt
     gstrengthenS dw ds cw cs n (M1 (K1 w)) =
         case strengthen w of
           Failure es ->
-            let sw = selNameElseIndex @mw n
-                ss = selNameElseIndex @ms n
-            in  Failure $ StrengthenErrorField dw ds cw cs sw ss es :| []
-          Success s   -> Success $ M1 $ K1 s
+            let fw = selName'' @mw
+                fs = selName'' @ms
+                e  = StrengthenErrorField dw ds cw cs n fw n fs es
+            in  (n, Failure $ e :| [])
+          Success s   -> (n, Success $ M1 $ K1 s)
 
+-- | Get the record name for a selector if present.
+--
 -- On the type level, a 'Maybe Symbol' is stored for record names. But the
 -- reification is done using @fromMaybe ""@. So we have to inspect the resulting
--- string to determine whether the field uses record syntax or not.
-selNameElseIndex :: forall s. Selector s => Natural -> Either Natural String
-selNameElseIndex n = case selName' @s of "" -> Left n
-                                         s  -> Right s
+-- string to determine whether the field uses record syntax or not. (Silly.)
+selName'' :: forall s. Selector s => Maybe String
+selName'' = case selName' @s of "" -> Nothing
+                                s  -> Just s
 
 -- | Strengthen product types by strengthening left and right.
 --
--- Note that this is applicative, not monadic.
+-- This is ordered (left then right), but only to pass the index along.
 instance (GStrengthenS lw ls, GStrengthenS rw rs) => GStrengthenS (lw :*: rw) (ls :*: rs) where
-    gstrengthenS dw ds cw cs n (l :*: r) = do
-        l' <- gstrengthenS dw ds cw cs n     l
-        r' <- gstrengthenS dw ds cw cs (n+1) r
-        return $ l' :*: r'
+    gstrengthenS dw ds cw cs n (l :*: r) = (n'', liftA2 (:*:) l' r')
+      where
+        (n',  l') = gstrengthenS dw ds cw cs n      l
+        (n'', r') = gstrengthenS dw ds cw cs (n'+1) r
 
 --------------------------------------------------------------------------------
 

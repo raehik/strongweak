@@ -14,38 +14,41 @@ spec :: Spec
 spec = do
     it "returns a precise error for failed generic strengthening (named field)" $ do
         let w = fromIntegral (maxBound @Word32) + 1
-            d = DP { dp1f1 = w, dp1f2 = 43  }
+            d = DP w 43 1 2 3
             e = seGeneric1
-                    "DP" "DP" "DP" "DP" (Right "dp1f1") (Right "dp1f1")
+                    "DP" "DP" "DP" "DP" 0 (Just "dp1f0") 0 (Just "dp1f0")
                     "Natural" "Word32" w
         strengthen' @(DP 'Strong) d `shouldSatisfy` svEqError e
     it "returns a precise error for failed generic strengthening (unnamed field)" $ do
         let w = fromIntegral (maxBound @Word8) + 1
-            d = DS1 w
+            d = DS0 0 1 2 3 w
             e = seGeneric1
-                    "DS" "DS" "DS1" "DS1" (Left 0) (Left 0)
+                    "DS" "DS" "DS0" "DS0" 4 Nothing 4 Nothing
                     "Natural" "Word8" w
         strengthen' @(DS 'Strong) d `shouldSatisfy` svEqError e
 
 seGeneric1
     :: Show w
-    => String -> String -> String -> String -> Either Natural String -> Either Natural String
+    => String -> String -> String -> String
+    -> Natural -> Maybe String -> Natural -> Maybe String
     -> String -> String -> w
     -> StrengthenError
-seGeneric1 dw ds cw cs sw ss tw ts w =
-    StrengthenErrorField dw ds cw cs sw ss (e :| [])
+seGeneric1 dw ds cw cs iw fw is fs tw ts w =
+    StrengthenErrorField dw ds cw cs iw fw is fs (e :| [])
   where e = StrengthenErrorBase tw ts (show w) (error "TODO ignoring msg")
 
 seEqIgnoreMsg :: StrengthenError -> StrengthenError -> Bool
 seEqIgnoreMsg s1 s2 = case s1 of
-  StrengthenErrorField   fw  fs  cw  cs  sw  ss  es -> case s2 of
-    StrengthenErrorField fw' fs' cw' cs' sw' ss' es' ->
-         fw == fw'
-      && fs == fs'
+  StrengthenErrorField   dw  ds  cw  cs  iw  fw  is  fs  es -> case s2 of
+    StrengthenErrorField dw' ds' cw' cs' iw' fw' is' fs' es' ->
+         dw == dw'
+      && ds == ds'
       && cw == cw'
       && cs == cs'
-      && sw == sw'
-      && ss == ss'
+      && iw == iw'
+      && fw == fw'
+      && is == is'
+      && fs == fs'
       && and (zipWith seEqIgnoreMsg (Foldable.toList es) (Foldable.toList es'))
     _ -> False
   StrengthenErrorBase   wt  st  wv  _ -> case s2 of

@@ -11,8 +11,8 @@ import Data.Word
 import Test.QuickCheck.Instances.Natural()
 
 data DS (s :: Strength)
-  = DS1 (SW s Word8)
-  | DS2 (SW s (Refined (LessThan 100) Natural))
+  = DS0 (SW s Word8) (SW s Word8) Word8 (SW s Word8) (SW s Word8)
+  | DS1 (SW s (Refined (LessThan 100) Natural))
     deriving stock (Generic)
 
 deriving stock instance Eq   (DS 'Strong)
@@ -27,8 +27,11 @@ instance Weaken     (DS 'Strong) (DS 'Weak)   where weaken     = weakenGeneric
 instance Strengthen (DS 'Weak)   (DS 'Strong) where strengthen = strengthenGeneric
 
 data DP (s :: Strength) = DP
-  { dp1f1 :: SW s Word32
-  , dp1f2 :: SW s (Refined (GreaterThan 42) Natural)
+  { dp1f0 :: SW s Word32
+  , dp1f1 :: SW s (Refined (GreaterThan 42) Natural)
+  , dp1f2 :: SW s Word8
+  , dp1f3 :: Word8
+  , dp1f4 :: SW s Word8
   } deriving stock (Generic)
 
 deriving stock instance Eq   (DP 'Strong)
