@@ -3,18 +3,7 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    name: refined
-    version: 0.6.3
-    git: https://github.com/nikita-volkov/refined
-    pantry-tree:
-      size: 779
-      sha256: 30b0606568fdd1c19dd7b530322a7bd6c7f3911c285c4dd6247e29f2e8b2e116
-    commit: 91566f4e313937b7315a401fd116fa0aa2a15f06
-  original:
-    git: https://github.com/nikita-volkov/refined
-    commit: 91566f4e313937b7315a401fd116fa0aa2a15f06
+packages: []
 snapshots:
 - completed:
     size: 539378

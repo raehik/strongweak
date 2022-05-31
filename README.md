@@ -57,7 +57,9 @@ may use efficient unsafe strengthenings, which don't perform invariant checks.
 ### Not a convertible
 This is not a `Convertible` library that enumerates transformations between
 types into a dictionary. A strong type has exactly one weak representation, and
-strengthening may fail while weakening cannot.
+strengthening may fail while weakening cannot. For safe conversion enumeration
+via typeclasses, consider Taylor Fausak's
+[witch](https://hackage.haskell.org/package/witch) library.
 
 ### Not particularly speedy
 The emphasis is on safety, possibly at the detriment of performance. However, my
