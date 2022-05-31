@@ -1,5 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
 module Strongweak
   ( module Strongweak.Weaken
   , module Strongweak.Strengthen, restrengthen
