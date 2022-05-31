@@ -14,18 +14,18 @@ spec :: Spec
 spec = do
     it "returns a precise error for failed generic strengthening (named field)" $ do
         let w = fromIntegral (maxBound @Word32) + 1
-            d = DP w 43 1 2 3
+            d = DP w 43 1 2 3 :: DP 'Weak
             e = seGeneric1
                     "DP" "DP" "DP" "DP" 0 (Just "dp1f0") 0 (Just "dp1f0")
                     "Natural" "Word32" w
-        strengthen' @(DP 'Strong) d `shouldSatisfy` svEqError e
+        strengthen @_ @(DP 'Strong) d `shouldSatisfy` svEqError e
     it "returns a precise error for failed generic strengthening (unnamed field)" $ do
         let w = fromIntegral (maxBound @Word8) + 1
-            d = DS0 0 1 2 3 w
+            d = DS0 0 1 2 3 w :: DS 'Weak
             e = seGeneric1
                     "DS" "DS" "DS0" "DS0" 4 Nothing 4 Nothing
                     "Natural" "Word8" w
-        strengthen' @(DS 'Strong) d `shouldSatisfy` svEqError e
+        strengthen @_ @(DS 'Strong) d `shouldSatisfy` svEqError e
 
 seGeneric1
     :: Show w

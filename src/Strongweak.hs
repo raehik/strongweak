@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Strongweak
   ( module Strongweak.Weaken
   , module Strongweak.Strengthen, restrengthen
@@ -22,4 +24,4 @@ import Data.List.NonEmpty
 restrengthen
     :: forall w s. (Weaken s w, Strengthen w s)
     => s -> Validation (NonEmpty StrengthenError) s
-restrengthen = strengthen . weaken
+restrengthen = strengthen @w . weaken

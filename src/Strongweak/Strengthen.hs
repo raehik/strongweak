@@ -1,4 +1,3 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP #-}
 
@@ -19,6 +18,9 @@ import Data.Validation
 import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.Foldable qualified as Foldable
 
+import Data.Functor.Identity
+import Data.Functor.Const
+
 {- | Any 'w' can be "strengthened" into an 's' by asserting some properties.
 
 For example, you may strengthen some 'Natural' @n@ into a 'Word8' by asserting
@@ -27,7 +29,7 @@ For example, you may strengthen some 'Natural' @n@ into a 'Word8' by asserting
 Note that we restrict strengthened types to having only one corresponding weak
 representation using functional dependencies.
 -}
-class Strengthen w s | s -> w where strengthen :: w -> Validation (NonEmpty StrengthenError) s
+class Strengthen w s where strengthen :: w -> Validation (NonEmpty StrengthenError) s
 
 -- | 'strengthen' with reordered type variables for more convenient visible type
 --   application.
@@ -84,8 +86,21 @@ strengthenErrorBase
 strengthenErrorBase w msg = Failure (e :| [])
   where e = StrengthenErrorBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
 
--- | Strengthen each element of a list.
-instance Strengthen w s => Strengthen [w] [s] where
+instance Typeable a => Strengthen (Maybe a) a where
+    strengthen = \case
+      Just a  -> Success a
+      Nothing -> strengthenErrorBase () "was Nothing"
+
+instance (Typeable a, Typeable e, Show e) => Strengthen (Either e a) a where
+    strengthen = \case
+      Right a -> Success a
+      Left  e -> strengthenErrorBase e "was Left"
+
+instance Strengthen (Identity a) a where strengthen (Identity a) = Success a
+instance Strengthen (Const a b) a where strengthen (Const a) = Success a
+
+-- | Strengthen each element of a traversable. TODO
+instance (Strengthen w s, Traversable t) => Strengthen (t w) (t s) where
     strengthen = traverse strengthen
 
 -- | Obtain a sized vector by asserting the size of a plain list.
