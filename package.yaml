@@ -65,11 +65,11 @@ default-extensions:
 
 dependencies:
 - base >= 4.14 && < 5
+- either ^>= 5.0.1.1
+- prettyprinter ^>= 1.7.1
+- refined ^>= 0.6.3
 - vector-sized ^>= 1.5.0
 - vector ^>= 0.12.3.1
-- refined ^>= 0.6.3
-- prettyprinter ^>= 1.7.1
-- validation ^>= 1.1.2
 
 library:
   source-dirs: src

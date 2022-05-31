@@ -81,9 +81,9 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.14 && <5
+    , either >=5.0.1.1 && <5.1
     , prettyprinter >=1.7.1 && <1.8
     , refined >=0.6.3 && <0.7
-    , validation >=1.1.2 && <1.2
     , vector >=0.12.3.1 && <0.13
     , vector-sized >=1.5.0 && <1.6
   if flag(refined-polykind)
@@ -137,13 +137,13 @@ test-suite spec
   build-depends:
       QuickCheck >=2.14.2 && <2.15
     , base >=4.14 && <5
+    , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
     , hspec >=2.7 && <2.10
     , prettyprinter >=1.7.1 && <1.8
     , quickcheck-instances >=0.3.26 && <0.4
     , refined >=0.6.3 && <0.7
     , strongweak
-    , validation >=1.1.2 && <1.2
     , vector >=0.12.3.1 && <0.13
     , vector-sized >=1.5.0 && <1.6
   if flag(refined-polykind)

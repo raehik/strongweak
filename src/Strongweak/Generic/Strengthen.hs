@@ -12,7 +12,7 @@ information is pushed into an error that wraps the original error.
 module Strongweak.Generic.Strengthen where
 
 import Strongweak.Strengthen
-import Data.Validation
+import Data.Either.Validation
 import Data.List.NonEmpty
 import GHC.Generics
 

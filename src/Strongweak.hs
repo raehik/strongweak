@@ -10,7 +10,7 @@ import Strongweak.Weaken
 import Strongweak.Strengthen
 import Strongweak.SW
 
-import Data.Validation
+import Data.Either.Validation
 import Data.List.NonEmpty
 
 -- | Weaken and re-strengthen a strong value.
@@ -24,4 +24,4 @@ import Data.List.NonEmpty
 restrengthen
     :: forall w s. (Weaken s w, Strengthen w s)
     => s -> Validation (NonEmpty StrengthenError) s
-restrengthen = strengthen @w . weaken
+restrengthen = strengthen . weaken

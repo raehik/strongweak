@@ -11,6 +11,11 @@ Take a pair of types `(strong, weak)`. We state the following:
   * You can try to convert ("strengthen") any `weak` value to a `strong` value,
     but it may fail.
 
+As a rule, a weak type should be *easier to use* than its related strong type.
+That is, it should have fewer invariants to consider or maintain. You could
+weaken an `a` to a `Maybe a`, but since a `Maybe a` is harder to use, it's not a
+candidate for this library.
+
 As an arbitrary limitation for ease of use, a strong type has only one
 associated weak type. The same weak type may be used for multiple strong types.
 

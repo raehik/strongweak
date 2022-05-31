@@ -2,7 +2,7 @@ module Strongweak.LawsSpec ( spec ) where
 
 import Strongweak
 import Common
-import Data.Validation
+import Data.Either.Validation
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
