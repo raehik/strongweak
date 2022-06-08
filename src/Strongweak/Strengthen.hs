@@ -17,25 +17,28 @@ module Strongweak.Strengthen
   -- * Helpers
   , strengthenBounded
 
-  -- * 'Weak' re-export
+  -- * Re-exports
   , Strongweak.Weaken.Weak
   ) where
 
 import Strongweak.Weaken ( Weaken(..) )
+import Data.Either.Validation
+import Type.Reflection ( Typeable, typeRep )
+import Prettyprinter
+import Prettyprinter.Render.String
+
 import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
 import Refined ( Refined, refine, Predicate )
 import Data.Vector.Sized qualified as Vector
 import Data.Vector.Sized ( Vector )
-import Type.Reflection ( Typeable, typeRep )
-
-import Prettyprinter
-import Prettyprinter.Render.String
-
-import Data.Either.Validation
-import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.Foldable qualified as Foldable
+import Control.Applicative ( liftA2 )
+import Data.Functor.Identity
+import Data.Functor.Const
+import Data.List.NonEmpty ( NonEmpty( (:|) ) )
+import Data.List.NonEmpty qualified as NonEmpty
 
 {- | You may attempt to transform a @'Weak' a@ to an @a@.
 
@@ -48,10 +51,26 @@ We take 'Weaken' as a superclass in order to maintain strong/weak type pair
 consistency. We choose this dependency direction because we treat the strong
 type as the "canonical" one, so 'Weaken' is the more natural (and
 straightforward) class to define.
+
+Instances should /either/ handle an invariant, or decompose. See "Strongweak"
+for a discussion on this design.
 -}
 class Weaken a => Strengthen a where
     -- | Attempt to transform a weak value to its associated strong one.
     strengthen :: Weak a -> Validation (NonEmpty StrengthenFail) a
+
+-- | Weaken a strong value, then strengthen it again.
+--
+-- Potentially useful if you have previously used
+-- 'Strongweak.Strengthen.Unsafe.unsafeStrengthen' and now wish to check the
+-- invariants. For example:
+--
+-- >>> restrengthen $ unsafeStrengthen @(Vector 2 Natural) [0]
+-- Failure ...
+restrengthen
+    :: (Strengthen a, Weaken a)
+    => a -> Validation (NonEmpty StrengthenFail) a
+restrengthen = strengthen . weaken
 
 -- | Strengthen failure data type. Don't use these constructors directly, use
 --   the existing helper functions.
@@ -103,9 +122,12 @@ strengthenFailBase
 strengthenFailBase w msg = Failure (e :| [])
   where e = StrengthenFailBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
 
--- | Strengthen each element of a list.
-instance Strengthen a => Strengthen [a] where
-    strengthen = traverse strengthen
+-- | Obtain a non-empty list by asserting non-emptiness of a plain list.
+instance (Typeable a, Show a) => Strengthen (NonEmpty a) where
+    strengthen a =
+        case NonEmpty.nonEmpty a of
+          Just a' -> Success a'
+          Nothing -> strengthenFailBase a "empty list"
 
 -- | Obtain a sized vector by asserting the size of a plain list.
 instance (KnownNat n, Typeable a, Show a) => Strengthen (Vector n a) where
@@ -149,15 +171,30 @@ strengthenBounded n =
     maxB = fromIntegral @b @n maxBound
     minB = fromIntegral @b @n minBound
 
--- | Weaken a strong value, then strengthen it again.
---
--- Potentially useful if you have previously used
--- 'Strongweak.Strengthen.Unsafe.unsafeStrengthen' and now wish to check the
--- invariants. For example:
---
--- >>> restrengthen $ unsafeStrengthen @(Vector 2 Natural) [0]
--- Failure ...
-restrengthen
-    :: (Strengthen a, Weaken a)
-    => a -> Validation (NonEmpty StrengthenFail) a
-restrengthen = strengthen . weaken
+--------------------------------------------------------------------------------
+
+-- | Decomposer. Strengthen every element in a list.
+instance Strengthen a => Strengthen [a] where
+    strengthen = traverse strengthen
+
+-- | Decomposer.
+instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
+    strengthen (a, b) = liftA2 (,) (strengthen a) (strengthen b)
+
+-- | Decomposer.
+instance Strengthen a => Strengthen (Maybe a) where
+    strengthen = \case Just a  -> Just <$> strengthen a
+                       Nothing -> pure Nothing
+
+-- | Decomposer.
+instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
+    strengthen = \case Left  a -> Left  <$> strengthen a
+                       Right b -> Right <$> strengthen b
+
+-- | Decomposer.
+instance Strengthen a => Strengthen (Identity a) where
+    strengthen = fmap Identity . strengthen . runIdentity
+
+-- | Decomposer.
+instance Strengthen a => Strengthen (Const a b) where
+    strengthen = fmap Const . strengthen . getConst

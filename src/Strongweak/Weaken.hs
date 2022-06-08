@@ -16,6 +16,10 @@ import Data.Int
 import Data.Vector.Sized qualified as Vector
 import Data.Vector.Sized ( Vector )
 import Data.Kind ( Type )
+import Data.Functor.Identity
+import Data.Functor.Const
+import Data.List.NonEmpty qualified as NonEmpty
+import Data.List.NonEmpty ( NonEmpty )
 
 {- | Transform an @a@ to a @'Weak' a@.
 
@@ -23,6 +27,9 @@ A given strong type @a@ has exactly one associated weak type @'Weak' a@.
 Multiple strong types may weaken to the same weak type.
 
 Law: @a === b -> 'weaken' a === 'weaken' b@
+
+Instances should /either/ handle an invariant, or decompose. See "Strongweak"
+for a discussion on this design.
 -}
 class Weaken a where
     -- | The type to weaken to.
@@ -57,10 +64,10 @@ type family SW (s :: Strength) a :: Type where
     SW 'Strong a = a
     SW 'Weak   a = Weak a
 
--- | Weaken each element of a list.
-instance Weaken a => Weaken [a] where
-    type Weak [a] = [Weak a]
-    weaken = map weaken
+-- | Weaken non-empty lists into plain lists.
+instance Weaken (NonEmpty a) where
+    type Weak (NonEmpty a) = [a]
+    weaken = NonEmpty.toList
 
 -- | Weaken sized vectors into plain lists.
 instance Weaken (Vector n a) where
@@ -97,3 +104,37 @@ instance Weaken Int32  where
 instance Weaken Int64  where
     type Weak Int64  = Integer
     weaken = fromIntegral
+
+--------------------------------------------------------------------------------
+
+-- | Decomposer. Weaken every element in a list.
+instance Weaken a => Weaken [a] where
+    type Weak [a] = [Weak a]
+    weaken = map weaken
+
+-- | Decomposer.
+instance (Weaken a, Weaken b) => Weaken (a, b) where
+    type Weak (a, b) = (Weak a, Weak b)
+    weaken (a, b) = (weaken a, weaken b)
+
+-- | Decomposer.
+instance Weaken a => Weaken (Maybe a) where
+    type Weak (Maybe a) = Maybe (Weak a)
+    weaken = \case Just a  -> Just $ weaken a
+                   Nothing -> Nothing
+
+-- | Decomposer.
+instance (Weaken a, Weaken b) => Weaken (Either a b) where
+    type Weak (Either a b) = Either (Weak a) (Weak b)
+    weaken = \case Left  a -> Left  $ weaken a
+                   Right b -> Right $ weaken b
+
+-- | Decomposer.
+instance Weaken a => Weaken (Identity a) where
+    type Weak (Identity a) = Identity (Weak a)
+    weaken = Identity . weaken . runIdentity
+
+-- | Decomposer.
+instance Weaken a => Weaken (Const a b) where
+    type Weak (Const a b) = Const (Weak a) b
+    weaken = Const . weaken . getConst
