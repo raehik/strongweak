@@ -1,9 +1,27 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP #-}
 
-module Strongweak.Strengthen where
+module Strongweak.Strengthen
+  (
+  -- * 'Strengthen' class
+    Strengthen(..)
 
+  -- * Strengthen failures
+  , StrengthenFail(..)
+  , strengthenFailPretty
+  , strengthenFailBase
+
+  -- * Restrengthening
+  , restrengthen
+
+  -- * Helpers
+  , strengthenBounded
+
+  -- * 'Weak' re-export
+  , Strongweak.Weaken.Weak
+  ) where
+
+import Strongweak.Weaken ( Weaken(..) )
 import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
@@ -19,34 +37,35 @@ import Data.Either.Validation
 import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.Foldable qualified as Foldable
 
-{- | Any 'w' can be "strengthened" into an 's' by asserting some properties.
+{- | You may attempt to transform a @'Weak' a@ to an @a@.
 
-For example, you may strengthen some 'Natural' @n@ into a 'Word8' by asserting
-@0 <= n <= 255@.
+Laws:
 
-Note that we restrict strengthened types to having only one corresponding weak
-representation using functional dependencies.
+  * @a === b -> 'strengthen' a === 'strengthen' b@
+  * @'strengthen' ('weaken' a) === 'Success' a@
+
+We take 'Weaken' as a superclass in order to maintain strong/weak type pair
+consistency. We choose this dependency direction because we treat the strong
+type as the "canonical" one, so 'Weaken' is the more natural (and
+straightforward) class to define.
 -}
-class Strengthen w s | s -> w where strengthen :: w -> Validation (NonEmpty StrengthenError) s
+class Weaken a => Strengthen a where
+    -- | Attempt to transform a weak value to its associated strong one.
+    strengthen :: Weak a -> Validation (NonEmpty StrengthenFail) a
 
--- | 'strengthen' with reordered type variables for more convenient visible type
---   application.
-strengthen' :: forall s w. Strengthen w s => w -> Validation (NonEmpty StrengthenError) s
-strengthen' = strengthen
-
--- | Strengthen error data type. Don't use these constructors directly, use
+-- | Strengthen failure data type. Don't use these constructors directly, use
 --   the existing helper functions.
 --
 -- Field indices are from 0 in the respective constructor. Field names are
 -- provided if present.
-data StrengthenError
-  = StrengthenErrorBase
+data StrengthenFail
+  = StrengthenFailBase
         String -- ^ weak   type
         String -- ^ strong type
         String -- ^ weak value
         String -- ^ msg
 
-  | StrengthenErrorField
+  | StrengthenFailField
         String                      -- ^ weak   datatype name
         String                      -- ^ strong datatype name
         String                      -- ^ weak   constructor name
@@ -55,77 +74,90 @@ data StrengthenError
         (Maybe String)              -- ^ weak   field name (if present)
         Natural                     -- ^ strong field index
         (Maybe String)              -- ^ strong field name (if present)
-        (NonEmpty StrengthenError)  -- ^ errors
+        (NonEmpty StrengthenFail)   -- ^ failures
     deriving stock Eq
 
-instance Show StrengthenError where
+instance Show StrengthenFail where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty
 
 -- TODO shorten value if over e.g. 50 chars. e.g. @[0,1,2,...,255] -> FAIL@
-instance Pretty StrengthenError where
+instance Pretty StrengthenFail where
     pretty = \case
-      StrengthenErrorBase wt st wv msg ->
+      StrengthenFailBase wt st wv msg ->
         vsep [ pretty wt<+>"->"<+>pretty st
              , pretty wv<+>"->"<+>"FAIL"
              , pretty msg ]
-      StrengthenErrorField dw _ds cw _cs iw fw _is _fs es ->
+      StrengthenFailField dw _ds cw _cs iw fw _is _fs es ->
         let sw = maybe (show iw) id fw
-        in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>line<>strengthenErrorPretty es
+        in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>line<>strengthenFailPretty es
 
 -- mutually recursive with its 'Pretty' instance. safe, but a bit confusing -
 -- clean up
-strengthenErrorPretty :: NonEmpty StrengthenError -> Doc a
-strengthenErrorPretty = vsep . map go . Foldable.toList
+strengthenFailPretty :: NonEmpty StrengthenFail -> Doc a
+strengthenFailPretty = vsep . map go . Foldable.toList
   where go e = "-"<+>indent 0 (pretty e)
 
-strengthenErrorBase
+strengthenFailBase
     :: forall s w. (Typeable w, Show w, Typeable s)
-    => w -> String -> Validation (NonEmpty StrengthenError) s
-strengthenErrorBase w msg = Failure (e :| [])
-  where e = StrengthenErrorBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
+    => w -> String -> Validation (NonEmpty StrengthenFail) s
+strengthenFailBase w msg = Failure (e :| [])
+  where e = StrengthenFailBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
 
 -- | Strengthen each element of a list.
-instance Strengthen w s => Strengthen [w] [s] where
+instance Strengthen a => Strengthen [a] where
     strengthen = traverse strengthen
 
 -- | Obtain a sized vector by asserting the size of a plain list.
-instance (KnownNat n, Typeable a, Show a) => Strengthen [a] (Vector n a) where
+instance (KnownNat n, Typeable a, Show a) => Strengthen (Vector n a) where
     strengthen w =
         case Vector.fromList w of
-          Nothing -> strengthenErrorBase w "TODO bad size vector"
+          Nothing -> strengthenFailBase w "TODO bad size vector"
           Just s  -> Success s
 
 -- | Obtain a refined type by applying its associated refinement.
 #ifdef REFINED_POLYKIND
-instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen a (Refined p a) where
+instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (Refined p a) where
 #else
-instance (Predicate p a, Typeable p, Typeable a, Show a) => Strengthen a (Refined p a) where
+instance (Predicate p a, Typeable p, Typeable a, Show a) => Strengthen (Refined p a) where
 #endif
     strengthen a =
         case refine a of
-          Left  err -> strengthenErrorBase a (show err)
+          Left  err -> strengthenFailBase a (show err)
           Right ra  -> Success ra
 
 -- Strengthen 'Natural's into Haskell's bounded unsigned numeric types.
-instance Strengthen Natural Word8  where strengthen = strengthenBounded
-instance Strengthen Natural Word16 where strengthen = strengthenBounded
-instance Strengthen Natural Word32 where strengthen = strengthenBounded
-instance Strengthen Natural Word64 where strengthen = strengthenBounded
+instance Strengthen Word8  where strengthen = strengthenBounded
+instance Strengthen Word16 where strengthen = strengthenBounded
+instance Strengthen Word32 where strengthen = strengthenBounded
+instance Strengthen Word64 where strengthen = strengthenBounded
 
 -- Strengthen 'Integer's into Haskell's bounded signed numeric types.
-instance Strengthen Integer Int8   where strengthen = strengthenBounded
-instance Strengthen Integer Int16  where strengthen = strengthenBounded
-instance Strengthen Integer Int32  where strengthen = strengthenBounded
-instance Strengthen Integer Int64  where strengthen = strengthenBounded
+instance Strengthen Int8   where strengthen = strengthenBounded
+instance Strengthen Int16  where strengthen = strengthenBounded
+instance Strengthen Int32  where strengthen = strengthenBounded
+instance Strengthen Int64  where strengthen = strengthenBounded
 
 strengthenBounded
     :: forall b n
     .  (Integral b, Bounded b, Show b, Typeable b, Integral n, Show n, Typeable n)
-    => n -> Validation (NonEmpty StrengthenError) b
+    => n -> Validation (NonEmpty StrengthenFail) b
 strengthenBounded n =
     if   n <= maxB && n >= minB then Success (fromIntegral n)
-    else strengthenErrorBase n $ "not well bounded, require: "
+    else strengthenFailBase n $ "not well bounded, require: "
                                  <>show minB<>" <= n <= "<>show maxB
   where
     maxB = fromIntegral @b @n maxBound
     minB = fromIntegral @b @n minBound
+
+-- | Weaken a strong value, then strengthen it again.
+--
+-- Potentially useful if you have previously used
+-- 'Strongweak.Strengthen.Unsafe.unsafeStrengthen' and now wish to check the
+-- invariants. For example:
+--
+-- >>> restrengthen $ unsafeStrengthen @(Vector 2 Natural) [0]
+-- Failure ...
+restrengthen
+    :: (Strengthen a, Weaken a)
+    => a -> Validation (NonEmpty StrengthenFail) a
+restrengthen = strengthen . weaken

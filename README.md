@@ -1,7 +1,8 @@
 [lib-refined-hackage]: https://hackage.haskell.org/package/refined
+[lib-barbies-hackage]: https://hackage.haskell.org/package/barbies
 
 # strongweak
-Convert between pairs of "weak" and "strong"/"validated" types, with good
+Purely convert between pairs of "weak" and "strong"/"validated" types, with good
 errors and generic derivers.
 
 ## Definition of strong and weak types
@@ -18,6 +19,8 @@ candidate for this library.
 
 As an arbitrary limitation for ease of use, a strong type has only one
 associated weak type. The same weak type may be used for multiple strong types.
+This restriction guides the design of "good" strong-weak type pairs & keeps them
+synchronized, plus helps type inference.
 
 ### Examples
 The [refined][lib-refined-hackage] library defines a `newtype Refined p a =
@@ -74,24 +77,23 @@ improve performance if it means invariants don't have to be continually asserted
 inline, but it also may slow things down e.g. `Natural`s are slower than
 `Word`s.
 
-## Generic derivation algorithm
-As far as I understand, `Strengthen` and `Weaken` generic derivations are safe,
-in that they will either fail with a type error, or give you a correct instance.
-Both work in a similar manner:
+## Related projects
+### barbies
+The [barbies][lib-barbies-hackage] library is an investigation into how far the
+higher-kinded data pattern can be stretched. strongweak has some similar ideas:
 
-  * Both datatypes are traversed in tandem.
-  * When both datatypes are at a field:
-    * If both types are identical, the value is rewrapped with no changes.
-    * Else, if the input type can be transformed into the output type, it is.
-      (Strengthening will wrap any errors at this stage with metadata collected
-      from the datatype's generic representation.
-    * Else, the pair of fields are not compatible, and the derivation fails.
+  * Both treat a type definition as a "skeleton" for further types.
+  * strongweak's `SW` type family looks a lot like barbies' `Wear`.
 
-Note this may fail for types with a manually-derived `Generic` instance:
+But I believe we're irreconcilable. strongweak is concerned with validation via
+types. `SW` is just a convenience to reuse a definition for two otherwise
+distinct types, and assist in handling common patterns. Due to the type family
+approach, we can rarely be polymorphic over the strong and weak representations.
+Whereas barbies wants to help you swap out functors over records, so it's very
+polymorphic over those, and makes rules for itself that then apply to its users.
 
-  * The types' SOP tree structures must match.
-    * I don't think GHC itself guarantees this, so if you receive surprising
-      derivation errors, the types might have differing generic representation
-      structure (even if the "flat" representation may be identical).
-  * Strengthening requires that metadata is present for all parts of the
-    representation (datatype, constructor, selector).
+You could stack barbies on top of a `SW` type no problem. It would enable you to
+split strengthening into two phases: strengthening each field, then gathering
+via traverse (rather than doing both at once via applicative do). That thinking
+helps reassure me that these ideas are separate. *(Note: I would hesitate to
+write such a type, because the definition would start to get mighty complex.)*

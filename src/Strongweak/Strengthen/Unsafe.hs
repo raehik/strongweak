@@ -1,8 +1,6 @@
-{-# LANGUAGE FunctionalDependencies #-}
-
 module Strongweak.Strengthen.Unsafe where
 
-import Numeric.Natural
+import Strongweak.Weaken
 import Data.Word
 import Data.Int
 import Refined ( Refined )
@@ -11,48 +9,43 @@ import Data.Vector.Sized ( Vector )
 import Data.Vector.Generic.Sized.Internal qualified
 import Data.Vector qualified
 
-{- | Any 'w' can be unsafely "strengthened" into an 's' by pretending that we've
-     asserted some properties.
+{- | Unsafely transform a @'Weak' a@ to an @a@, without asserting invariants.
 
-For example, you may unsafely strengthen some 'Natural' @n@ into a 'Word8' by
-unsafely coercing the value, ignoring the possibility that @n >= 255@.
+For example, you may unsafely strengthen some @'Numeric.Natural.Natural' n@ into
+a 'Word8' by unsafely coercing the value, ignoring the possibility that @n >=
+255@.
 
-Currently, this class is more of a thought experiment than something to use.
-That is to say, do not use this.
-
-This typeclass should probably follow its big sis 'Strengthen'. Only provide
-'UnsafeStrengthen' instances for types that have similar 'Strengthen' instances.
+Some unsafe strengthens are more dangerous than others. The above one would
+safely overflow on invalid inputs, but others will explode your computer if it
+turns out you were lying and an invariant wasn't upheld. Only consider using
+this if you have a guarantee that your value is safe to treat as strong.
 -}
-class UnsafeStrengthen w s | s -> w where unsafeStrengthen :: w -> s
-
--- | 'unsafeStrengthen' with reordered type variables for more convenient
---   visible type application.
-unsafeStrengthen' :: forall s w. UnsafeStrengthen w s => w -> s
-unsafeStrengthen' = unsafeStrengthen
+class Weaken a => UnsafeStrengthen a where
+    -- | Unsafely transform a weak value to its associated strong one.
+    unsafeStrengthen :: Weak a -> a
 
 -- | Unsafely strengthen each element of a list.
-instance UnsafeStrengthen w s => UnsafeStrengthen [w] [s] where
+instance UnsafeStrengthen a => UnsafeStrengthen [a] where
     unsafeStrengthen = map unsafeStrengthen
 
--- | Obtain a sized vector by unsafely assuming the size of a plain list.
---   Extremely unsafe.
-instance UnsafeStrengthen [a] (Vector n a) where
+-- | Unsafely assume the size of a plain list.
+instance UnsafeStrengthen (Vector n a) where
     unsafeStrengthen = Data.Vector.Generic.Sized.Internal.Vector . Data.Vector.fromList
 
--- | Obtain a refined type by ignoring the predicate.
-instance UnsafeStrengthen a (Refined p a) where
+-- | Wrap a value to a refined one without checking the predicate.
+instance UnsafeStrengthen (Refined p a) where
     unsafeStrengthen = reallyUnsafeRefine
 
 -- Coerce 'Natural's into Haskell's bounded unsigned numeric types. Poorly-sized
 -- values will safely overflow according to the type's behaviour.
-instance UnsafeStrengthen Natural Word8  where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Natural Word16 where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Natural Word32 where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Natural Word64 where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Word8  where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Word16 where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Word32 where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Word64 where unsafeStrengthen = fromIntegral
 
 -- Coerce 'Integer's into Haskell's bounded signed numeric types. Poorly-sized
 -- values will safely overflow according to the type's behaviour.
-instance UnsafeStrengthen Integer Int8   where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Integer Int16  where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Integer Int32  where unsafeStrengthen = fromIntegral
-instance UnsafeStrengthen Integer Int64  where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Int8   where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Int16  where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Int32  where unsafeStrengthen = fromIntegral
+instance UnsafeStrengthen Int64  where unsafeStrengthen = fromIntegral

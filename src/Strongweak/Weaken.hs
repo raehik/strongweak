@@ -1,6 +1,13 @@
-{-# LANGUAGE FunctionalDependencies #-}
+module Strongweak.Weaken
+  (
+  -- * 'Weaken' class
+    Weaken(..)
+  , liftWeakF
 
-module Strongweak.Weaken where
+  -- * 'SW' helper
+  , Strength(..)
+  , SW
+  ) where
 
 import Refined ( Refined, unrefine )
 import Numeric.Natural ( Natural )
@@ -8,31 +15,85 @@ import Data.Word
 import Data.Int
 import Data.Vector.Sized qualified as Vector
 import Data.Vector.Sized ( Vector )
+import Data.Kind ( Type )
 
-{- | Any 's' can be "weakened" into a 'w'.
+{- | Transform an @a@ to a @'Weak' a@.
 
-For example, you may weaken a 'Word8' into a 'Natural'.
+A given strong type @a@ has exactly one associated weak type @'Weak' a@.
+Multiple strong types may weaken to the same weak type.
 
-Note that we restrict strengthened types to having only one corresponding weak
-representation using functional dependencies.
+Law: @a === b -> 'weaken' a === 'weaken' b@
 -}
-class Weaken s w | s -> w where weaken :: s -> w
+class Weaken a where
+    -- | The type to weaken to.
+    type Weak a :: Type
 
--- | Weaken each element of a list
-instance Weaken s w => Weaken [s] [w] where weaken = map weaken
+    -- | Transform a strong value to its associated weak one.
+    weaken :: a -> Weak a
+
+-- | Lift a function on a weak type to the associated strong type.
+liftWeakF :: Weaken a => (Weak a -> b) -> (a -> b)
+liftWeakF f = f . weaken
+
+-- | Strength enumeration: is it strong, or weak?
+--
+-- Primarily interesting at the type level (using DataKinds).
+data Strength = Strong | Weak
+
+{- | Get either the strong or weak representation of a type, depending on the
+     type-level "switch" provided.
+
+This is intended to be used in data types that take a 'Strength' type. Define
+your type using strong fields wrapped in @SW s@. You then get the weak
+representation for free, using the same definition.
+
+@
+data A (s :: Strength) = A
+  { a1 :: SW s Word8
+  , a2 :: String }
+@
+-}
+type family SW (s :: Strength) a :: Type where
+    SW 'Strong a = a
+    SW 'Weak   a = Weak a
+
+-- | Weaken each element of a list.
+instance Weaken a => Weaken [a] where
+    type Weak [a] = [Weak a]
+    weaken = map weaken
 
 -- | Weaken sized vectors into plain lists.
-instance Weaken (Vector n a) [a] where weaken = Vector.toList
+instance Weaken (Vector n a) where
+    type Weak (Vector n a) = [a]
+    weaken = Vector.toList
 
 -- | Strip the refinement from refined types.
-instance Weaken (Refined p a) a where weaken = unrefine
+instance Weaken (Refined p a) where
+    type Weak (Refined p a) = a
+    weaken = unrefine
 
 -- Weaken the bounded Haskell numeric types using 'fromIntegral'.
-instance Weaken Word8  Natural where weaken = fromIntegral
-instance Weaken Word16 Natural where weaken = fromIntegral
-instance Weaken Word32 Natural where weaken = fromIntegral
-instance Weaken Word64 Natural where weaken = fromIntegral
-instance Weaken Int8   Integer where weaken = fromIntegral
-instance Weaken Int16  Integer where weaken = fromIntegral
-instance Weaken Int32  Integer where weaken = fromIntegral
-instance Weaken Int64  Integer where weaken = fromIntegral
+instance Weaken Word8  where
+    type Weak Word8  = Natural
+    weaken = fromIntegral
+instance Weaken Word16 where
+    type Weak Word16 = Natural
+    weaken = fromIntegral
+instance Weaken Word32 where
+    type Weak Word32 = Natural
+    weaken = fromIntegral
+instance Weaken Word64 where
+    type Weak Word64 = Natural
+    weaken = fromIntegral
+instance Weaken Int8   where
+    type Weak Int8   = Integer
+    weaken = fromIntegral
+instance Weaken Int16  where
+    type Weak Int16  = Integer
+    weaken = fromIntegral
+instance Weaken Int32  where
+    type Weak Int32  = Integer
+    weaken = fromIntegral
+instance Weaken Int64  where
+    type Weak Int64  = Integer
+    weaken = fromIntegral
