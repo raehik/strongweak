@@ -23,8 +23,10 @@ deriving stock instance Eq   (DS 'Weak)
 deriving stock instance Show (DS 'Weak)
 deriving via (GenericArbitraryU `AndShrinking` (DS 'Weak))   instance Arbitrary (DS 'Weak)
 
-instance Weaken     (DS 'Strong) (DS 'Weak)   where weaken     = weakenGeneric
-instance Strengthen (DS 'Weak)   (DS 'Strong) where strengthen = strengthenGeneric
+instance Weaken     (DS 'Strong) where
+    type Weak (DS 'Strong) = DS 'Weak
+    weaken = weakenGeneric
+instance Strengthen (DS 'Strong) where strengthen = strengthenGeneric
 
 data DP (s :: Strength) = DP
   { dp1f0 :: SW s Word32
@@ -42,5 +44,7 @@ deriving stock instance Eq   (DP 'Weak)
 deriving stock instance Show (DP 'Weak)
 deriving via (GenericArbitraryU `AndShrinking` (DP 'Weak))   instance Arbitrary (DP 'Weak)
 
-instance Weaken     (DP 'Strong) (DP 'Weak)   where weaken     = weakenGeneric
-instance Strengthen (DP 'Weak)   (DP 'Strong) where strengthen = strengthenGeneric
+instance Weaken     (DP 'Strong) where
+    type Weak (DP 'Strong) = DP 'Weak
+    weaken = weakenGeneric
+instance Strengthen (DP 'Strong) where strengthen = strengthenGeneric

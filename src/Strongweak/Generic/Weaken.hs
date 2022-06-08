@@ -1,4 +1,4 @@
--- | Weakening for generic data types.
+-- | 'weaken' over generic representations.
 
 module Strongweak.Generic.Weaken where
 
@@ -6,6 +6,10 @@ import Strongweak.Weaken
 
 import GHC.Generics
 
+-- | Weaken a value generically.
+--
+-- The weak and strong types must be /compatible/. See 'Strongweak.Generic' for
+-- the definition of compatibility in this context.
 weakenGeneric :: (Generic s, Generic w, GWeaken (Rep s) (Rep w)) => s -> w
 weakenGeneric = to . gweaken . from
 
@@ -29,14 +33,14 @@ instance GWeaken (Rec0 s) (Rec0 s) where
     gweaken = id
 
 -- | Weaken a field using the existing 'Weaken' instance.
-instance {-# OVERLAPS #-} Weaken s w => GWeaken (Rec0 s) (Rec0 w) where
+instance {-# OVERLAPS #-} (Weaken s, Weak s ~ w) => GWeaken (Rec0 s) (Rec0 w) where
     gweaken = K1 . weaken . unK1
 
 -- | Weaken product types by weakening left and right.
 instance (GWeaken ls lw, GWeaken rs rw) => GWeaken (ls :*: rs) (lw :*: rw) where
     gweaken (l :*: r) = gweaken l :*: gweaken r
 
--- | Weaken sum types by weakening left or right.
+-- | Weaken sum types by casing and weakening left or right.
 instance (GWeaken ls lw, GWeaken rs rw) => GWeaken (ls :+: rs) (lw :+: rw) where
     gweaken = \case L1 l -> L1 $ gweaken l
                     R1 r -> R1 $ gweaken r

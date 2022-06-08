@@ -34,13 +34,11 @@ flag refined-polykind
 library
   exposed-modules:
       Strongweak
-      Strongweak.Example
       Strongweak.Generic
       Strongweak.Generic.Strengthen
       Strongweak.Generic.Weaken
       Strongweak.Strengthen
       Strongweak.Strengthen.Unsafe
-      Strongweak.SW
       Strongweak.Weaken
   other-modules:
       Paths_strongweak
