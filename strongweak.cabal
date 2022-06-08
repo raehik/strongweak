@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           strongweak
-version:        0.2.0
+version:        0.3.0
 synopsis:       Convert between strong and weak representations of types
 description:    Please see README.md.
 category:       Data

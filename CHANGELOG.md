@@ -1,4 +1,4 @@
-## 0.3.0 (Unreleased)
+## 0.3.0 (2022-06-08)
   * switch to associated type family for `Weak` inside `Weaken` - `Strengthen`
     now has `Weaken` as a superclass
     * I'm fairly confident that things make more sense this way - we get to
@@ -6,6 +6,7 @@
       writing potentially dangerous instances. For that, a bit of asymmetry is
       welcome.
   * better document generic derivers
+  * clarify instance design, provide more decomposer instances
   * various refactoring
 
 ## 0.2.0 (2022-05-31)
