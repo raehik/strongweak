@@ -46,13 +46,12 @@ library
       src
   default-extensions:
       EmptyCase
-      FlexibleContexts
-      FlexibleInstances
-      InstanceSigs
-      MultiParamTypeClasses
-      PolyKinds
       LambdaCase
+      InstanceSigs
+      BangPatterns
+      ExplicitNamespaces
       DerivingStrategies
+      DerivingVia
       StandaloneDeriving
       DeriveAnyClass
       DeriveGeneric
@@ -61,21 +60,22 @@ library
       DeriveFoldable
       DeriveTraversable
       DeriveLift
+      FlexibleContexts
+      FlexibleInstances
+      MultiParamTypeClasses
+      GADTs
+      PolyKinds
+      RoleAnnotations
+      RankNTypes
+      TypeApplications
+      DefaultSignatures
+      TypeFamilies
+      DataKinds
+      MagicHash
       ImportQualifiedPost
       StandaloneKindSignatures
-      DerivingVia
-      RoleAnnotations
-      TypeApplications
-      DataKinds
-      TypeFamilies
-      TypeOperators
-      BangPatterns
-      GADTs
-      DefaultSignatures
-      RankNTypes
-      UndecidableInstances
-      MagicHash
       ScopedTypeVariables
+      TypeOperators
   ghc-options: -Wall
   build-depends:
       base >=4.14 && <5
@@ -100,13 +100,12 @@ test-suite spec
       test
   default-extensions:
       EmptyCase
-      FlexibleContexts
-      FlexibleInstances
-      InstanceSigs
-      MultiParamTypeClasses
-      PolyKinds
       LambdaCase
+      InstanceSigs
+      BangPatterns
+      ExplicitNamespaces
       DerivingStrategies
+      DerivingVia
       StandaloneDeriving
       DeriveAnyClass
       DeriveGeneric
@@ -115,21 +114,22 @@ test-suite spec
       DeriveFoldable
       DeriveTraversable
       DeriveLift
+      FlexibleContexts
+      FlexibleInstances
+      MultiParamTypeClasses
+      GADTs
+      PolyKinds
+      RoleAnnotations
+      RankNTypes
+      TypeApplications
+      DefaultSignatures
+      TypeFamilies
+      DataKinds
+      MagicHash
       ImportQualifiedPost
       StandaloneKindSignatures
-      DerivingVia
-      RoleAnnotations
-      TypeApplications
-      DataKinds
-      TypeFamilies
-      TypeOperators
-      BangPatterns
-      GADTs
-      DefaultSignatures
-      RankNTypes
-      UndecidableInstances
-      MagicHash
       ScopedTypeVariables
+      TypeOperators
   build-tool-depends:
       hspec-discover:hspec-discover >=2.7 && <2.10
   build-depends:
