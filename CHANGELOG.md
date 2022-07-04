@@ -1,3 +1,6 @@
+## 0.3.1 (2022-07-04)
+  * update refined (polykind predicate)
+
 ## 0.3.0 (2022-06-08)
   * switch to associated type family for `Weak` inside `Weaken` - `Strengthen`
     now has `Weaken` as a superclass

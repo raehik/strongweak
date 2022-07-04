@@ -1,5 +1,5 @@
 name: strongweak
-version: 0.3.0
+version: 0.3.1
 synopsis: Convert between strong and weak representations of types
 description: Please see README.md.
 extra-source-files:
@@ -71,14 +71,15 @@ dependencies:
 - base >= 4.14 && < 5
 - either ^>= 5.0.1.1
 - prettyprinter ^>= 1.7.1
-- refined ^>= 0.6.3
+- refined ^>= 0.7
 - vector-sized ^>= 1.5.0
 - vector ^>= 0.12.3.1
 
+ghc-options:
+- -Wall
+
 library:
   source-dirs: src
-  ghc-options:
-  - -Wall
 
 tests:
   spec:
@@ -92,14 +93,3 @@ tests:
     - QuickCheck ^>= 2.14.2
     - quickcheck-instances ^>= 0.3.26
     - generic-random ^>= 1.5.0.1
-
-flags:
-  refined-polykind:
-    description: assume predicate p in Refined p a is polykinded
-    default: false
-    manual: true
-
-when:
-- condition: flag(refined-polykind)
-  cpp-options:
-  - -DREFINED_POLYKIND

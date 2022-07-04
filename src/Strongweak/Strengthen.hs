@@ -137,11 +137,7 @@ instance (KnownNat n, Typeable a, Show a) => Strengthen (Vector n a) where
           Just s  -> Success s
 
 -- | Obtain a refined type by applying its associated refinement.
-#ifdef REFINED_POLYKIND
 instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (Refined p a) where
-#else
-instance (Predicate p a, Typeable p, Typeable a, Show a) => Strengthen (Refined p a) where
-#endif
     strengthen a =
         case refine a of
           Left  err -> strengthenFailBase a (show err)

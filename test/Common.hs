@@ -23,8 +23,8 @@ deriving stock instance Eq   (DS 'Weak)
 deriving stock instance Show (DS 'Weak)
 deriving via (GenericArbitraryU `AndShrinking` (DS 'Weak))   instance Arbitrary (DS 'Weak)
 
-instance Weaken     (DS 'Strong) where
-    type Weak (DS 'Strong) = DS 'Weak
+instance Weaken (DS 'Strong) where
+    type Weak   (DS 'Strong) = DS 'Weak
     weaken = weakenGeneric
 instance Strengthen (DS 'Strong) where strengthen = strengthenGeneric
 
