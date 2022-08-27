@@ -69,6 +69,7 @@ library
       MagicHash
       ImportQualifiedPost
       StandaloneKindSignatures
+      BinaryLiterals
       ScopedTypeVariables
       TypeOperators
   ghc-options: -Wall
@@ -77,7 +78,7 @@ library
     , either >=5.0.1.1 && <5.1
     , prettyprinter >=1.7.1 && <1.8
     , refined ==0.7.*
-    , vector >=0.12.3.1 && <0.13
+    , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
   default-language: Haskell2010
 
@@ -121,6 +122,7 @@ test-suite spec
       MagicHash
       ImportQualifiedPost
       StandaloneKindSignatures
+      BinaryLiterals
       ScopedTypeVariables
       TypeOperators
   ghc-options: -Wall
@@ -131,11 +133,11 @@ test-suite spec
     , base >=4.14 && <5
     , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
-    , hspec >=2.7 && <2.10
+    , hspec >=2.7 && <2.11
     , prettyprinter >=1.7.1 && <1.8
     , quickcheck-instances >=0.3.26 && <0.4
     , refined ==0.7.*
     , strongweak
-    , vector >=0.12.3.1 && <0.13
+    , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
   default-language: Haskell2010

@@ -19,7 +19,7 @@ author: Ben Orchard
 # hpack release, and then that release in Stack.
 language: GHC2021
 
-# raehik's extensions (GHC 9.2; last updated: 2022-06-15)
+# raehik's extensions (GHC 9.2; last updated: 2022-08-17)
 default-extensions:
 # syntax that should be default
 - EmptyCase
@@ -59,6 +59,7 @@ default-extensions:
 - MagicHash
 - ImportQualifiedPost # 8.10
 - StandaloneKindSignatures # 8.10
+- BinaryLiterals # 7.10
 
 # essential, but can break things, so be wary
 - ScopedTypeVariables # changes type var scoping quite dramatically
@@ -67,16 +68,16 @@ default-extensions:
 # useful extensions to know about, but which must be specified on-demand
 #- UndecidableInstances
 
+ghc-options:
+- -Wall
+
 dependencies:
 - base >= 4.14 && < 5
 - either ^>= 5.0.1.1
 - prettyprinter ^>= 1.7.1
 - refined ^>= 0.7
 - vector-sized ^>= 1.5.0
-- vector ^>= 0.12.3.1
-
-ghc-options:
-- -Wall
+- vector >= 0.12.3.1 && < 0.14
 
 library:
   source-dirs: src
@@ -89,7 +90,7 @@ tests:
     - hspec-discover >= 2.7 && < 2.10
     dependencies:
     - strongweak
-    - hspec >= 2.7 && < 2.10
+    - hspec >= 2.7 && < 2.11
     - QuickCheck ^>= 2.14.2
     - quickcheck-instances ^>= 0.3.26
     - generic-random ^>= 1.5.0.1
