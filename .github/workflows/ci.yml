@@ -17,8 +17,9 @@ on:
     - main
   pull_request:
     types:
-    - opened
     - synchronize
+    - opened
+    - reopened
 
 # If env.exe exists, jobs will build and upload the specified executable with
 # optimizations (-O2). If it doesn't exist, jobs will build without
