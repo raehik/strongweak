@@ -14,22 +14,20 @@ github: raehik/strongweak
 maintainer: Ben Orchard <thefirstmuffinman@gmail.com>
 author: Ben Orchard
 
-# raehik's extensions (GHC 9.2; last updated: 2022-10-05)
+# raehik's extensions (GHC 9.2; last updated: 2022-10-06)
 language: GHC2021
 default-extensions:
 # syntax that should be default
 - LambdaCase
-- ExplicitNamespaces # 7.6
 - NoStarIsType
 
 ## deriving-related
-- DerivingStrategies # 8.2
-- DerivingVia # 8.6
+- DerivingVia # implies DerivingStrategies
 - DeriveAnyClass
 
 # features that should be default
 - GADTs
-- RoleAnnotations # 7.8
+- RoleAnnotations
 
 # other features
 - DefaultSignatures
@@ -67,6 +65,7 @@ default-extensions:
 ghc-options:
 - -Wall
 
+# `pkg ^>= x.y.z` means `pkg >= x.y.z && < x.(y+1)
 dependencies:
 - base >= 4.14 && < 5
 - either ^>= 5.0.1.1
