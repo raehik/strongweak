@@ -14,7 +14,7 @@ github: raehik/strongweak
 maintainer: Ben Orchard <thefirstmuffinman@gmail.com>
 author: Ben Orchard
 
-# raehik's extensions (GHC 9.2; last updated: 2022-10-06)
+# raehik's extensions (GHC 9.2; last updated: 2022-10-09)
 language: GHC2021
 default-extensions:
 # syntax that should be default
@@ -47,20 +47,6 @@ default-extensions:
 #   enabling on demand brings attention to the sort of functions to expect
 # StarIsType:
 #   may need to enable if you're working with old code that uses `Int :: *`
-# ApplicativeDo:
-#   fantastic, but may contain issues and surprises, and still new to most
-#   Haskell programmers. suggest per-module
-# CPP, TemplateHaskell: big scary extensions, only enable when using
-#
-# possible additions:
-#
-# OverloadedStrings:
-#   incredibly useful but can force unexpected type annotations
-#   I prefer enabling only in modules that deal with string-likes
-# FunctionalDependencies:
-#   less common extension but remains useful
-# PatternSynonyms:
-#   amazing but huge, and without enabling you can still use (just not define)
 
 ghc-options:
 - -Wall
