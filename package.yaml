@@ -56,7 +56,7 @@ dependencies:
 - base >= 4.14 && < 5
 - either ^>= 5.0.1.1
 - prettyprinter ^>= 1.7.1
-- refined ^>= 0.7
+- refined >= 0.7 && < 0.9
 - vector-sized ^>= 1.5.0
 - vector >= 0.12.3.1 && < 0.14
 
