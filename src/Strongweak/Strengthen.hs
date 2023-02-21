@@ -177,10 +177,10 @@ instance Strengthen a => Strengthen [a] where
 instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
     strengthen (a, b) = liftA2 (,) (strengthen a) (strengthen b)
 
--- | Decomposer.
-instance Strengthen a => Strengthen (Maybe a) where
-    strengthen = \case Just a  -> Just <$> strengthen a
-                       Nothing -> pure Nothing
+instance (Show a, Typeable a) => Strengthen (Maybe a) where
+    strengthen = \case [a] -> pure $ Just a
+                       []  -> pure Nothing
+                       x   -> strengthenFailBase x "list wasn't [a] or []"
 
 -- | Decomposer.
 instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where

@@ -73,10 +73,10 @@ instance UnsafeStrengthen a => UnsafeStrengthen [a] where
 instance (UnsafeStrengthen a, UnsafeStrengthen b) => UnsafeStrengthen (a, b) where
     unsafeStrengthen (a, b) = (unsafeStrengthen a, unsafeStrengthen b)
 
--- | Decomposer.
-instance UnsafeStrengthen a => UnsafeStrengthen (Maybe a) where
-    unsafeStrengthen = \case Just a  -> Just $ unsafeStrengthen a
-                             Nothing -> Nothing
+instance UnsafeStrengthen (Maybe a) where
+    unsafeStrengthen = \case [a] -> Just a
+                             []  -> Nothing
+                             _   -> error "your list wasn't [] or [a]"
 
 -- | Decomposer.
 instance (UnsafeStrengthen a, UnsafeStrengthen b) => UnsafeStrengthen (Either a b) where

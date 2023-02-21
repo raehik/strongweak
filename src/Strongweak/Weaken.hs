@@ -119,11 +119,10 @@ instance (Weaken a, Weaken b) => Weaken (a, b) where
     type Weak (a, b) = (Weak a, Weak b)
     weaken (a, b) = (weaken a, weaken b)
 
--- | Decomposer.
-instance Weaken a => Weaken (Maybe a) where
-    type Weak (Maybe a) = Maybe (Weak a)
-    weaken = \case Just a  -> Just $ weaken a
-                   Nothing -> Nothing
+instance Weaken (Maybe a) where
+    type Weak (Maybe a) = [a]
+    weaken = \case Just a  -> [a]
+                   Nothing -> []
 
 -- | Decomposer.
 instance (Weaken a, Weaken b) => Weaken (Either a b) where
