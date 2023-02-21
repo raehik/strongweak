@@ -28,6 +28,8 @@ Multiple strong types may weaken to the same weak type.
 
 Law: @a === b -> 'weaken' a === 'weaken' b@
 
+^ TODO uhhhhhh is that correct??? shouldn't it be the OTHER WAY AROUND???????
+
 Instances should /either/ handle an invariant, or decompose. See "Strongweak"
 for a discussion on this design.
 -}
@@ -129,12 +131,10 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
 
--- | Decomposer.
-instance Weaken a => Weaken (Identity a) where
-    type Weak (Identity a) = Identity (Weak a)
-    weaken = Identity . weaken . runIdentity
+instance Weaken (Identity a) where
+    type Weak (Identity a) = a
+    weaken = runIdentity
 
--- | Decomposer.
-instance Weaken a => Weaken (Const a b) where
-    type Weak (Const a b) = Const (Weak a) b
-    weaken = Const . weaken . getConst
+instance Weaken (Const a b) where
+    type Weak (Const a b) = a
+    weaken = getConst

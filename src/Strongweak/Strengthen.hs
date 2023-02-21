@@ -187,10 +187,8 @@ instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
     strengthen = \case Left  a -> Left  <$> strengthen a
                        Right b -> Right <$> strengthen b
 
--- | Decomposer.
-instance Strengthen a => Strengthen (Identity a) where
-    strengthen = fmap Identity . strengthen . runIdentity
+instance Strengthen (Identity a) where
+    strengthen = pure <$> Identity
 
--- | Decomposer.
-instance Strengthen a => Strengthen (Const a b) where
-    strengthen = fmap Const . strengthen . getConst
+instance Strengthen (Const a b) where
+    strengthen = pure <$> Const

@@ -83,10 +83,8 @@ instance (UnsafeStrengthen a, UnsafeStrengthen b) => UnsafeStrengthen (Either a 
     unsafeStrengthen = \case Left  a -> Left  $ unsafeStrengthen a
                              Right b -> Right $ unsafeStrengthen b
 
--- | Decomposer.
-instance UnsafeStrengthen a => UnsafeStrengthen (Identity a) where
-    unsafeStrengthen = Identity . unsafeStrengthen . runIdentity
+instance UnsafeStrengthen (Identity a) where
+    unsafeStrengthen = Identity
 
--- | Decomposer.
-instance UnsafeStrengthen a => UnsafeStrengthen (Const a b) where
-    unsafeStrengthen = Const . unsafeStrengthen . getConst
+instance UnsafeStrengthen (Const a b) where
+    unsafeStrengthen = Const
