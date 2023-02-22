@@ -1,3 +1,9 @@
+## 0.4.0 (2023-02-22)
+  * redesign some instances to avoid the decomposer style
+    * alter `Identity`, `Const` instances
+    * remove `Maybe` instance
+  * expand sized vector instance
+
 ## 0.3.2 (2022-11-28)
   * support GHC 9.4
 
