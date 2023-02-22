@@ -31,8 +31,8 @@ import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
 import Refined ( Refined, refine, Predicate )
-import Data.Vector.Sized qualified as Vector
-import Data.Vector.Sized ( Vector )
+import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
+import Data.Vector.Generic qualified as VG
 import Data.Foldable qualified as Foldable
 import Control.Applicative ( liftA2 )
 import Data.Functor.Identity
@@ -122,30 +122,33 @@ strengthenFailBase
 strengthenFailBase w msg = Failure (e :| [])
   where e = StrengthenFailBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
 
--- | Obtain a non-empty list by asserting non-emptiness of a plain list.
-instance (Typeable a, Show a) => Strengthen (NonEmpty a) where
-    strengthen a =
-        case NonEmpty.nonEmpty a of
-          Just a' -> Success a'
-          Nothing -> strengthenFailBase a "empty list"
-
--- | Obtain a sized vector by asserting the size of a plain list.
-instance (KnownNat n, Typeable a, Show a) => Strengthen (Vector n a) where
-    strengthen w =
-        case Vector.fromList w of
-          Nothing -> strengthenFailBase w "TODO bad size vector"
-          Just s  -> Success s
-
--- | Obtain a refined type by applying its associated refinement.
+-- | Assert a predicate to refine a type.
 instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (Refined p a) where
     strengthen a =
         case refine a of
           Left  err -> strengthenFailBase a (show err)
           Right ra  -> Success ra
 
+-- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
+instance (Typeable a, Show a) => Strengthen (NonEmpty a) where
+    strengthen a =
+        case NonEmpty.nonEmpty a of
+          Just a' -> Success a'
+          Nothing -> strengthenFailBase a "empty list"
+
+-- | Strengthen a plain list into a sized vector by asserting length.
+instance (VG.Vector v a, KnownNat n, Typeable v, Typeable a, Show a)
+  => Strengthen (VGS.Vector v n a) where
+    strengthen w =
+        case VGS.fromList w of
+          Nothing -> strengthenFailBase w "TODO bad size vector"
+          Just s  -> Success s
+
+-- | Add wrapper.
 instance Strengthen (Identity a) where
     strengthen = pure <$> Identity
 
+-- | Add wrapper.
 instance Strengthen (Const a b) where
     strengthen = pure <$> Const
 
@@ -186,11 +189,11 @@ strengthenBounded n =
 instance Strengthen a => Strengthen [a] where
     strengthen = traverse strengthen
 
--- | Decomposer.
+-- | Decomposer. Strengthen both elements of a tuple.
 instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
     strengthen (a, b) = liftA2 (,) (strengthen a) (strengthen b)
 
--- | Decomposer.
+-- | Decomposer. Strengthen either side of an 'Either'.
 instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
     strengthen = \case Left  a -> Left  <$> strengthen a
                        Right b -> Right <$> strengthen b

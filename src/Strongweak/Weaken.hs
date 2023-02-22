@@ -69,7 +69,7 @@ type family SW (s :: Strength) a :: Type where
     SW 'Strong a = a
     SW 'Weak   a = Weak a
 
--- | Strip the refinement from refined types.
+-- | Strip refined type refinement.
 instance Weaken (Refined p a) where
     type Weak (Refined p a) = a
     weaken = unrefine
@@ -84,12 +84,12 @@ instance VG.Vector v a => Weaken (VGS.Vector v n a) where
     type Weak (VGS.Vector v n a) = [a]
     weaken = VGS.toList
 
--- | Strip identity functor wrapper.
+-- | Strip wrapper.
 instance Weaken (Identity a) where
     type Weak (Identity a) = a
     weaken = runIdentity
 
--- | Strip constant functor wrapper.
+-- | Strip wrapper.
 instance Weaken (Const a b) where
     type Weak (Const a b) = a
     weaken = getConst
