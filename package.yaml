@@ -1,5 +1,5 @@
 name: strongweak
-version: 0.4.0
+version: 0.4.1
 synopsis: Convert between strong and weak representations of types
 description: Please see README.md.
 extra-source-files:

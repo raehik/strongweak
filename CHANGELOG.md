@@ -1,3 +1,6 @@
+## 0.4.1 (2023-02-22)
+  * add `DerivingVia` wrapper for generic instances (like `Generically`)
+
 ## 0.4.0 (2023-02-22)
   * redesign some instances to avoid the decomposer style
     * alter `Identity`, `Const` instances
