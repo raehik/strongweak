@@ -8,10 +8,14 @@ module Strongweak.Generic
   -- * Generic derivers
     weakenGeneric
   , strengthenGeneric
+
+  -- * Generic wrapper
+  , GenericallySW(..)
   ) where
 
 import Strongweak.Generic.Weaken
 import Strongweak.Generic.Strengthen
+import Strongweak.Generic.Via
 
 {- $generic-derivation-compatibility
 

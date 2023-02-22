@@ -31,6 +31,7 @@ library
       Strongweak
       Strongweak.Generic
       Strongweak.Generic.Strengthen
+      Strongweak.Generic.Via
       Strongweak.Generic.Weaken
       Strongweak.Strengthen
       Strongweak.Strengthen.Unsafe

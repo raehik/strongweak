@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 module Strongweak
   (
   -- * Instance design
