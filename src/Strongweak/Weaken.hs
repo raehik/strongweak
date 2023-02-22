@@ -13,8 +13,8 @@ import Refined ( Refined, unrefine )
 import Numeric.Natural ( Natural )
 import Data.Word
 import Data.Int
-import Data.Vector.Sized qualified as Vector
-import Data.Vector.Sized ( Vector )
+import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
+import Data.Vector.Generic qualified as VG
 import Data.Kind ( Type )
 import Data.Functor.Identity
 import Data.Functor.Const
@@ -26,11 +26,14 @@ import Data.List.NonEmpty ( NonEmpty )
 A given strong type @a@ has exactly one associated weak type @'Weak' a@.
 Multiple strong types may weaken to the same weak type.
 
-Law: @a === b -> 'weaken' a === 'weaken' b@
+The following laws must hold:
 
-^ TODO uhhhhhh is that correct??? shouldn't it be the OTHER WAY AROUND???????
+  * @a == b |= 'weaken' a == 'weaken' b@
+  * round-trip: @'strengthen' ('weaken' a) == 'pure' a@
 
-Instances should /either/ handle an invariant, or decompose. See "Strongweak"
+Most instances should strip an invariant, and not have a recursive context. Some
+types don't have an invariant
+/either/ handle an invariant, or decompose. See "Strongweak"
 for a discussion on this design.
 -}
 class Weaken a where
@@ -66,20 +69,38 @@ type family SW (s :: Strength) a :: Type where
     SW 'Strong a = a
     SW 'Weak   a = Weak a
 
+-- | Strip the refinement from refined types.
+instance Weaken (Refined p a) where
+    type Weak (Refined p a) = a
+    weaken = unrefine
+
 -- | Weaken non-empty lists into plain lists.
 instance Weaken (NonEmpty a) where
     type Weak (NonEmpty a) = [a]
     weaken = NonEmpty.toList
 
 -- | Weaken sized vectors into plain lists.
-instance Weaken (Vector n a) where
-    type Weak (Vector n a) = [a]
-    weaken = Vector.toList
+instance VG.Vector v a => Weaken (VGS.Vector v n a) where
+    type Weak (VGS.Vector v n a) = [a]
+    weaken = VGS.toList
 
--- | Strip the refinement from refined types.
-instance Weaken (Refined p a) where
-    type Weak (Refined p a) = a
-    weaken = unrefine
+-- | Strip identity functor wrapper.
+instance Weaken (Identity a) where
+    type Weak (Identity a) = a
+    weaken = runIdentity
+
+-- | Strip constant functor wrapper.
+instance Weaken (Const a b) where
+    type Weak (Const a b) = a
+    weaken = getConst
+
+{- TODO controversial. seems logical, but also kinda annoying.
+-- | Weaken 'Maybe' (0 or 1) into '[]' (0 to n).
+instance Weaken (Maybe a) where
+    type Weak (Maybe a) = [a]
+    weaken = \case Just a  -> [a]
+                   Nothing -> []
+-}
 
 -- Weaken the bounded Haskell numeric types using 'fromIntegral'.
 instance Weaken Word8  where
@@ -114,26 +135,13 @@ instance Weaken a => Weaken [a] where
     type Weak [a] = [Weak a]
     weaken = map weaken
 
--- | Decomposer.
+-- | Decomposer. Weaken both elements of a tuple.
 instance (Weaken a, Weaken b) => Weaken (a, b) where
     type Weak (a, b) = (Weak a, Weak b)
     weaken (a, b) = (weaken a, weaken b)
 
-instance Weaken (Maybe a) where
-    type Weak (Maybe a) = [a]
-    weaken = \case Just a  -> [a]
-                   Nothing -> []
-
--- | Decomposer.
+-- | Decomposer. Weaken either side of an 'Either'.
 instance (Weaken a, Weaken b) => Weaken (Either a b) where
     type Weak (Either a b) = Either (Weak a) (Weak b)
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
-
-instance Weaken (Identity a) where
-    type Weak (Identity a) = a
-    weaken = runIdentity
-
-instance Weaken (Const a b) where
-    type Weak (Const a b) = a
-    weaken = getConst

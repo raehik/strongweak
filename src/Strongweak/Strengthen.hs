@@ -143,6 +143,19 @@ instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (R
           Left  err -> strengthenFailBase a (show err)
           Right ra  -> Success ra
 
+instance Strengthen (Identity a) where
+    strengthen = pure <$> Identity
+
+instance Strengthen (Const a b) where
+    strengthen = pure <$> Const
+
+{- TODO controversial. seems logical, but also kinda annoying.
+instance (Show a, Typeable a) => Strengthen (Maybe a) where
+    strengthen = \case [a] -> pure $ Just a
+                       []  -> pure Nothing
+                       x   -> strengthenFailBase x "list wasn't [a] or []"
+-}
+
 -- Strengthen 'Natural's into Haskell's bounded unsigned numeric types.
 instance Strengthen Word8  where strengthen = strengthenBounded
 instance Strengthen Word16 where strengthen = strengthenBounded
@@ -177,18 +190,7 @@ instance Strengthen a => Strengthen [a] where
 instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
     strengthen (a, b) = liftA2 (,) (strengthen a) (strengthen b)
 
-instance (Show a, Typeable a) => Strengthen (Maybe a) where
-    strengthen = \case [a] -> pure $ Just a
-                       []  -> pure Nothing
-                       x   -> strengthenFailBase x "list wasn't [a] or []"
-
 -- | Decomposer.
 instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
     strengthen = \case Left  a -> Left  <$> strengthen a
                        Right b -> Right <$> strengthen b
-
-instance Strengthen (Identity a) where
-    strengthen = pure <$> Identity
-
-instance Strengthen (Const a b) where
-    strengthen = pure <$> Const

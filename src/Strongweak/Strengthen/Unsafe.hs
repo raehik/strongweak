@@ -37,6 +37,10 @@ class Weaken a => UnsafeStrengthen a where
     -- | Unsafely transform a weak value to its associated strong one.
     unsafeStrengthen :: Weak a -> a
 
+-- | Wrap a value to a refined one without checking the predicate.
+instance UnsafeStrengthen (Refined p a) where
+    unsafeStrengthen = reallyUnsafeRefine
+
 -- | Unsafely assume a list is non-empty.
 instance UnsafeStrengthen (NonEmpty a) where
     unsafeStrengthen = NonEmpty.fromList
@@ -45,9 +49,21 @@ instance UnsafeStrengthen (NonEmpty a) where
 instance UnsafeStrengthen (Vector n a) where
     unsafeStrengthen = Data.Vector.Generic.Sized.Internal.Vector . Data.Vector.fromList
 
--- | Wrap a value to a refined one without checking the predicate.
-instance UnsafeStrengthen (Refined p a) where
-    unsafeStrengthen = reallyUnsafeRefine
+-- | Safe.
+instance UnsafeStrengthen (Identity a) where
+    unsafeStrengthen = Identity
+
+-- | Safe.
+instance UnsafeStrengthen (Const a b) where
+    unsafeStrengthen = Const
+
+{- TODO controversial. seems logical, but also kinda annoying.
+-- | Unsafely grab either 0 or 1 elements from a list.
+instance UnsafeStrengthen (Maybe a) where
+    unsafeStrengthen = \case [a] -> Just a
+                             []  -> Nothing
+                             _   -> error "your list wasn't [] or [a]"
+-}
 
 -- Coerce 'Natural's into Haskell's bounded unsigned numeric types. Poorly-sized
 -- values will safely overflow according to the type's behaviour.
@@ -73,18 +89,7 @@ instance UnsafeStrengthen a => UnsafeStrengthen [a] where
 instance (UnsafeStrengthen a, UnsafeStrengthen b) => UnsafeStrengthen (a, b) where
     unsafeStrengthen (a, b) = (unsafeStrengthen a, unsafeStrengthen b)
 
-instance UnsafeStrengthen (Maybe a) where
-    unsafeStrengthen = \case [a] -> Just a
-                             []  -> Nothing
-                             _   -> error "your list wasn't [] or [a]"
-
 -- | Decomposer.
 instance (UnsafeStrengthen a, UnsafeStrengthen b) => UnsafeStrengthen (Either a b) where
     unsafeStrengthen = \case Left  a -> Left  $ unsafeStrengthen a
                              Right b -> Right $ unsafeStrengthen b
-
-instance UnsafeStrengthen (Identity a) where
-    unsafeStrengthen = Identity
-
-instance UnsafeStrengthen (Const a b) where
-    unsafeStrengthen = Const
