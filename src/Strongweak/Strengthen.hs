@@ -40,23 +40,19 @@ import Data.Functor.Const
 import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.List.NonEmpty qualified as NonEmpty
 
-{- | You may attempt to transform a @'Weak' a@ to an @a@.
-
-Laws:
-
-  * @a === b -> 'strengthen' a === 'strengthen' b@
-  * @'strengthen' ('weaken' a) === 'Success' a@
+{- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
 We take 'Weaken' as a superclass in order to maintain strong/weak type pair
 consistency. We choose this dependency direction because we treat the strong
 type as the "canonical" one, so 'Weaken' is the more natural (and
-straightforward) class to define.
+straightforward) class to define. That does mean the instances for this class
+are a little confusingly worded. Alas.
 
-Instances should /either/ handle an invariant, or decompose. See "Strongweak"
-for a discussion on this design.
+See "Strongweak" for class design notes and laws.
 -}
 class Weaken a => Strengthen a where
-    -- | Attempt to transform a weak value to its associated strong one.
+    -- | Attempt to strengthen some @'Weak' a@ to its associated strong type
+    --   @a@.
     strengthen :: Weak a -> Validation (NonEmpty StrengthenFail) a
 
 -- | Weaken a strong value, then strengthen it again.

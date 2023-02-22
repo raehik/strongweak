@@ -15,6 +15,9 @@ import Data.List.NonEmpty ( NonEmpty )
 
 {- | Unsafely transform a @'Weak' a@ to an @a@, without asserting invariants.
 
+Naturally, you must only even /consider/ using this if you have a guarantee that
+your value is safe to treat as strong.
+
 For example, you may unsafely strengthen some @'Numeric.Natural.Natural' n@ into
 a 'Word8' by unsafely coercing the value, ignoring the possibility that @n >=
 255@.
@@ -24,17 +27,12 @@ doesn't fit in its strong counterpart? That depends on the strengthen.
 
   * Numeric coercions should safely overflow.
   * Some will raise an error (e.g. 'NonEmpty').
-  * Others will appear to work, but later explode your computer (sized vectors
-    will probably do this).
+  * Others will appear to work, but later explode your computer.
 
-Only consider using this if you have a guarantee that your value is safe to
-treat as strong.
-
-Instances should /either/ handle an invariant, or decompose. See "Strongweak"
-for a discussion on this design.
+See "Strongweak" for class design notes and laws.
 -}
 class Weaken a => UnsafeStrengthen a where
-    -- | Unsafely transform a weak value to its associated strong one.
+    -- | Unsafely transform a @'Weak' a@ to its associated strong type @a@.
     unsafeStrengthen :: Weak a -> a
 
 -- | Add a refinement to a type without checking the associated predicate.

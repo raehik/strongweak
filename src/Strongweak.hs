@@ -13,6 +13,14 @@ import Strongweak.Strengthen
 
 {- $strongweak-instance-design
 
+A given strong type @a@ has exactly one associated weak type @'Weak' a@.
+Multiple strong types may weaken to the same weak type.
+
+The following laws must hold:
+
+  * @'weaken' a == 'weaken' b |= a == b@
+  * @'strengthen' ('weaken' a) == 'pure' a@
+
 strongweak is largely a programmer convenience library. There is a lot of room
 to write instances which may seem useful on first glance, but are inconsistent
 with the overall design. Here is some relevant guidance.

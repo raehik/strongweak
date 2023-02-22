@@ -21,26 +21,15 @@ import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 
-{- | Transform an @a@ to a @'Weak' a@.
+{- | Weaken some @a@, relaxing certain invariants.
 
-A given strong type @a@ has exactly one associated weak type @'Weak' a@.
-Multiple strong types may weaken to the same weak type.
-
-The following laws must hold:
-
-  * @a == b |= 'weaken' a == 'weaken' b@
-  * round-trip: @'strengthen' ('weaken' a) == 'pure' a@
-
-Most instances should strip an invariant, and not have a recursive context. Some
-types don't have an invariant
-/either/ handle an invariant, or decompose. See "Strongweak"
-for a discussion on this design.
+See "Strongweak" for class design notes and laws.
 -}
 class Weaken a where
-    -- | The type to weaken to.
+    -- | The weakened type for some type.
     type Weak a :: Type
 
-    -- | Transform a strong value to its associated weak one.
+    -- | Weaken some @a@ to its associated weak type @'Weak' a@.
     weaken :: a -> Weak a
 
 -- | Lift a function on a weak type to the associated strong type.
