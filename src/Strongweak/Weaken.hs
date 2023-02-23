@@ -10,6 +10,7 @@ module Strongweak.Weaken
   ) where
 
 import Refined ( Refined, unrefine )
+import Refined.Refined1
 import Numeric.Natural ( Natural )
 import Data.Word
 import Data.Int
@@ -62,6 +63,11 @@ type family SW (s :: Strength) a :: Type where
 instance Weaken (Refined p a) where
     type Weak (Refined p a) = a
     weaken = unrefine
+
+-- | Strip refined functor type refinement.
+instance Weaken (Refined1 p f a) where
+    type Weak (Refined1 p f a) = f a
+    weaken = unrefine1
 
 -- | Weaken non-empty lists into plain lists.
 instance Weaken (NonEmpty a) where

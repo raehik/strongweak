@@ -28,6 +28,7 @@ source-repository head
 
 library
   exposed-modules:
+      Refined.Refined1
       Strongweak
       Strongweak.Generic
       Strongweak.Generic.Strengthen
@@ -57,6 +58,7 @@ library
     , either >=5.0.1.1 && <5.1
     , prettyprinter >=1.7.1 && <1.8
     , refined >=0.7 && <0.9
+    , text
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
   default-language: GHC2021
@@ -95,6 +97,7 @@ test-suite spec
     , quickcheck-instances >=0.3.26 && <0.4
     , refined >=0.7 && <0.9
     , strongweak
+    , text
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
   default-language: GHC2021

@@ -30,7 +30,8 @@ import Prettyprinter.Render.String
 import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
-import Refined ( Refined, refine, Predicate )
+import Refined ( Refined, refine, ApplyPred, Pred, predName, displayRefineException, RefineException )
+import Refined.Refined1
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Foldable qualified as Foldable
@@ -39,6 +40,7 @@ import Data.Functor.Identity
 import Data.Functor.Const
 import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Text ( Text )
 
 {- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
@@ -80,6 +82,10 @@ data StrengthenFail
         String -- ^ weak value
         String -- ^ msg
 
+  | StrengthenFailRefine
+        Text -- ^ predicate name
+        RefineException -- ^ refinement error
+
   | StrengthenFailField
         String                      -- ^ weak   datatype name
         String                      -- ^ strong datatype name
@@ -90,7 +96,7 @@ data StrengthenFail
         Natural                     -- ^ strong field index
         (Maybe String)              -- ^ strong field name (if present)
         (NonEmpty StrengthenFail)   -- ^ failures
-    deriving stock Eq
+    -- deriving stock Eq
 
 instance Show StrengthenFail where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty
@@ -98,6 +104,9 @@ instance Show StrengthenFail where
 -- TODO shorten value if over e.g. 50 chars. e.g. @[0,1,2,...,255] -> FAIL@
 instance Pretty StrengthenFail where
     pretty = \case
+      StrengthenFailRefine p err ->
+        vsep [ "refinement: "<+>pretty p
+             , "failed with: "<+>pretty (displayRefineException err) ]
       StrengthenFailBase wt st wv msg ->
         vsep [ pretty wt<+>"->"<+>pretty st
              , pretty wv<+>"->"<+>"FAIL"
@@ -118,12 +127,31 @@ strengthenFailBase
 strengthenFailBase w msg = Failure (e :| [])
   where e = StrengthenFailBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
 
+strengthenFailRefine
+    :: forall p w. Pred p
+    => RefineException -> Validation (NonEmpty StrengthenFail) (Refined p w)
+strengthenFailRefine err = Failure (e :| [])
+  where e = StrengthenFailRefine (predName @p) err
+
+strengthenFailRefine1
+    :: forall p f w. Pred p
+    => RefineException -> Validation (NonEmpty StrengthenFail) (Refined1 p f w)
+strengthenFailRefine1 err = Failure (e :| [])
+  where e = StrengthenFailRefine (predName @p) err
+
 -- | Assert a predicate to refine a type.
-instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (Refined p a) where
+instance ApplyPred p a => Strengthen (Refined p a) where
     strengthen a =
         case refine a of
-          Left  err -> strengthenFailBase a (show err)
+          Left  err -> strengthenFailRefine @p err
           Right ra  -> Success ra
+
+-- | Assert a predicate to refine a functor type.
+instance ApplyPred1 p f => Strengthen (Refined1 p f a) where
+    strengthen fa =
+        case refine1 fa of
+          Left  err -> strengthenFailRefine1 @p err
+          Right rfa -> Success rfa
 
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
 instance (Typeable a, Show a) => Strengthen (NonEmpty a) where
