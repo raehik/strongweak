@@ -7,7 +7,9 @@ handling/"unwrapping" a different layer of the generic representation: datatype
 (D), constructor (C) and selector (S).
 -}
 
+-- both required due to type class design
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Strongweak.Generic.Strengthen where
 
@@ -15,8 +17,10 @@ import Strongweak.Strengthen
 import Data.Either.Validation
 import Data.List.NonEmpty
 import GHC.Generics
+import Data.Kind
+import GHC.TypeNats
+import GHC.Exts ( proxy#, Proxy# )
 
-import Numeric.Natural
 import Control.Applicative ( liftA2 )
 
 -- | Strengthen a value generically.
@@ -33,69 +37,79 @@ class GStrengthenD w s where
     gstrengthenD :: w p -> Validation (NonEmpty StrengthenFail) (s p)
 
 -- | Enter a datatype, stripping its metadata wrapper.
-instance (GStrengthenC w s, Datatype dw, Datatype ds) => GStrengthenD (D1 dw w) (D1 ds s) where
-    gstrengthenD = fmap M1 . gstrengthenC (datatypeName' @dw) (datatypeName' @ds) . unM1
+instance GStrengthenC wcd scd w s => GStrengthenD (D1 wcd w) (D1 scd s) where
+    gstrengthenD = fmap M1 . gstrengthenC @wcd @scd . unM1
 
 -- | Generic strengthening at the constructor sum level.
-class GStrengthenC w s where
-    gstrengthenC :: String -> String -> w p -> Validation (NonEmpty StrengthenFail) (s p)
+class GStrengthenC wcd scd w s where
+    gstrengthenC :: w p -> Validation (NonEmpty StrengthenFail) (s p)
 
 -- | Nothing to do for empty datatypes.
-instance GStrengthenC V1 V1 where
-    gstrengthenC _ _ = Success
+instance GStrengthenC wcd scd V1 V1 where gstrengthenC = Success
 
 -- | Strengthen sum types by casing and strengthening left or right.
-instance (GStrengthenC lw ls, GStrengthenC rw rs) => GStrengthenC (lw :+: rw) (ls :+: rs) where
-    gstrengthenC dw ds = \case L1 l -> L1 <$> gstrengthenC dw ds l
-                               R1 r -> R1 <$> gstrengthenC dw ds r
+instance
+  ( GStrengthenC wcd scd wl sl
+  , GStrengthenC wcd scd wr sr
+  ) => GStrengthenC wcd scd (wl :+: wr) (sl :+: sr) where
+    gstrengthenC = \case L1 l -> L1 <$> gstrengthenC @wcd @scd l
+                         R1 r -> R1 <$> gstrengthenC @wcd @scd r
 
 -- | Enter a constructor, stripping its metadata wrapper.
-instance (GStrengthenS w s, Constructor cw, Constructor cs) => GStrengthenC (C1 cw w) (C1 cs s) where
-    gstrengthenC dw ds = fmap M1 . snd . gstrengthenS dw ds (conName' @cw) (conName' @cs) 0 . unM1
+instance GStrengthenS wcd scd wcc scc 0 w s
+  => GStrengthenC wcd scd (C1 wcc w) (C1 scc s) where
+    gstrengthenC = fmap M1 . gstrengthenS @wcd @scd @wcc @scc @0 . unM1
 
-{- | Generic strengthening at the selector product level.
-
-In order to calculate field indices, we return the current field index alongside
-the result. This way, the product case can strengthen the left branch, then
-increment the returned field index and use it for strengthening the right
-branch.
--}
-class GStrengthenS w s where
-    gstrengthenS
-        :: String  -- ^ weak   datatype name
-        -> String  -- ^ strong datatype name
-        -> String  -- ^ weak   constructor name
-        -> String  -- ^ strong constructor name
-        -> Natural -- ^ current field index (0, from left)
-        -> w p -> (Natural, Validation (NonEmpty StrengthenFail) (s p))
+-- | Generic strengthening at the constructor level.
+class GStrengthenS wcd scd wcc scc (si :: Natural) w s where
+    gstrengthenS :: w p -> Validation (NonEmpty StrengthenFail) (s p)
 
 -- | Nothing to do for empty constructors.
-instance GStrengthenS U1 U1 where
-    gstrengthenS _ _ _ _ n x = (n, Success x)
+instance GStrengthenS wcd scd wcc scc si U1 U1 where gstrengthenS = Success
 
 -- | Strengthen product types by strengthening left and right.
---
--- This is ordered (left then right) in order to pass the field index along.
-instance (GStrengthenS lw ls, GStrengthenS rw rs) => GStrengthenS (lw :*: rw) (ls :*: rs) where
-    gstrengthenS dw ds cw cs n (l :*: r) = (n'', liftA2 (:*:) l' r')
-      where
-        (n',  l') = gstrengthenS dw ds cw cs n      l
-        (n'', r') = gstrengthenS dw ds cw cs (n'+1) r
+instance
+  ( GStrengthenS wcd scd wcc scc si                  wl sl
+  , GStrengthenS wcd scd wcc scc (si + ProdArity wl) wr sr
+  ) => GStrengthenS wcd scd wcc scc si (wl :*: wr) (sl :*: sr) where
+    gstrengthenS (l :*: r) =
+        liftA2 (:*:)
+               (gstrengthenS @wcd @scd @wcc @scc @si                  l)
+               (gstrengthenS @wcd @scd @wcc @scc @(si + ProdArity wl) r)
 
 -- | Special case: if source and target types are equal, copy the value through.
-instance GStrengthenS (S1 mw (Rec0 w)) (S1 ms (Rec0 w)) where
-    gstrengthenS _ _ _ _ n x = (n, Success (M1 (unM1 x)))
+instance GStrengthenS wcd scd wcc scc si (S1 wcs (Rec0 a)) (S1 scs (Rec0 a)) where
+    gstrengthenS = Success . M1 . unM1
 
 -- | Strengthen a field using the existing 'Strengthen' instance.
-instance {-# OVERLAPS #-} (Strengthen s, Weak s ~ w, Selector mw, Selector ms) => GStrengthenS (S1 mw (Rec0 w)) (S1 ms (Rec0 s)) where
-    gstrengthenS dw ds cw cs n (M1 (K1 w)) =
-        case strengthen w of
-          Failure es ->
-            let fw = selName'' @mw
-                fs = selName'' @ms
-                e  = StrengthenFailField dw ds cw cs n fw n fs es
-            in  (n, Failure $ e :| [])
-          Success s   -> (n, Success $ M1 $ K1 s)
+instance {-# OVERLAPS #-}
+  ( Weak s ~ w -- has to be here, else "illegal typesym family app in instance"
+  , Strengthen s
+  , Datatype wcd, Datatype scd
+  , Constructor wcc, Constructor scc
+  , Selector wcs, Selector scs
+  , KnownNat si
+  ) => GStrengthenS wcd scd wcc scc si (S1 wcs (Rec0 w)) (S1 scs (Rec0 s)) where
+    gstrengthenS = unM1 .> unK1 .> strengthen .> \case
+      Success s  -> Success $ M1 $ K1 s
+      Failure es -> Failure $ e :| []
+        where
+          e = StrengthenFailField wcd scd wcc scc si wcs si scs es
+          wcd = datatypeName' @wcd
+          scd = datatypeName' @scd
+          wcc = conName' @wcc
+          scc = conName' @scc
+          wcs = selName'' @wcs
+          scs = selName'' @scs
+          si = natVal'' @si
+
+--------------------------------------------------------------------------------
+
+-- from flow
+(.>) :: (a -> b) -> (b -> c) -> a -> c
+f .> g = g . f
+
+--------------------------------------------------------------------------------
 
 -- | Get the record name for a selector if present.
 --
@@ -105,8 +119,6 @@ instance {-# OVERLAPS #-} (Strengthen s, Weak s ~ w, Selector mw, Selector ms) =
 selName'' :: forall s. Selector s => Maybe String
 selName'' = case selName' @s of "" -> Nothing
                                 s  -> Just s
-
---------------------------------------------------------------------------------
 
 -- | 'conName' without the value (only used as a proxy). Lets us push our
 --   'undefined's into one place.
@@ -122,3 +134,15 @@ datatypeName' = datatypeName @d undefined
 --   'undefined's into one place.
 selName' :: forall s. Selector s => String
 selName' = selName @s undefined
+
+--------------------------------------------------------------------------------
+
+type family ProdArity (f :: Type -> Type) :: Natural where
+    ProdArity (S1 c f)  = 1
+    ProdArity (l :*: r) = ProdArity l + ProdArity r
+
+--------------------------------------------------------------------------------
+
+natVal'' :: forall n. KnownNat n => Natural
+natVal'' = natVal' (proxy# :: Proxy# n)
+{-# INLINE natVal'' #-}
