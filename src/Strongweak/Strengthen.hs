@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 
 module Strongweak.Strengthen
   (
@@ -8,8 +7,9 @@ module Strongweak.Strengthen
 
   -- * Strengthen failures
   , StrengthenFail(..)
+  , TryStrengthen
   , strengthenFailPretty
-  , strengthenFailBase
+  , strengthenFailShow
 
   -- * Restrengthening
   , restrengthen
@@ -21,16 +21,18 @@ module Strongweak.Strengthen
   , Strongweak.Weaken.Weak
   ) where
 
+
+import Util.Typeable ( typeRep' )
 import Strongweak.Weaken ( Weaken(..) )
 import Data.Either.Validation
-import Type.Reflection ( Typeable, typeRep )
+import Data.Typeable ( Typeable, TypeRep )
 import Prettyprinter
 import Prettyprinter.Render.String
 
 import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
-import Refined ( Refined, refine, Predicate )
+import Refined hiding ( Weaken, weaken, strengthen, NonEmpty )
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Foldable qualified as Foldable
@@ -39,6 +41,8 @@ import Data.Functor.Identity
 import Data.Functor.Const
 import Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import Data.List.NonEmpty qualified as NonEmpty
+
+type TryStrengthen = Validation (NonEmpty StrengthenFail)
 
 {- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
@@ -53,7 +57,7 @@ See "Strongweak" for class design notes and laws.
 class Weaken a => Strengthen a where
     -- | Attempt to strengthen some @'Weak' a@ to its associated strong type
     --   @a@.
-    strengthen :: Weak a -> Validation (NonEmpty StrengthenFail) a
+    strengthen :: Weak a -> TryStrengthen a
 
 -- | Weaken a strong value, then strengthen it again.
 --
@@ -65,21 +69,22 @@ class Weaken a => Strengthen a where
 -- Failure ...
 restrengthen
     :: (Strengthen a, Weaken a)
-    => a -> Validation (NonEmpty StrengthenFail) a
+    => a -> TryStrengthen a
 restrengthen = strengthen . weaken
 
--- | Strengthen failure data type. Don't use these constructors directly, use
---   the existing helper functions.
---
--- Field indices are from 0 in the respective constructor. Field names are
--- provided if present.
+-- | A failure encountered during strengthening.
 data StrengthenFail
-  = StrengthenFailBase
-        String -- ^ weak   type
-        String -- ^ strong type
-        String -- ^ weak value
-        String -- ^ msg
+  -- | A refinement failure.
+  = StrengthenFailRefine
+        TypeRep         -- ^ predicate name
+        RefineException -- ^ refine error
 
+  -- | Some failures occurred when strengthening from one data type to another.
+  --
+  -- Field indices are from 0 in the respective constructor. Field names are
+  -- provided if are present in the type.
+  --
+  -- This is primarily intended to be used by generic strengtheners.
   | StrengthenFailField
         String                      -- ^ weak   datatype name
         String                      -- ^ strong datatype name
@@ -90,7 +95,19 @@ data StrengthenFail
         Natural                     -- ^ strong field index
         (Maybe String)              -- ^ strong field name (if present)
         (NonEmpty StrengthenFail)   -- ^ failures
-    deriving stock Eq
+
+  -- | A failure containing lots of detail. Use in concrete instances where you
+  --   already have the 'Show's and 'Typeable's needed.
+  | StrengthenFailShow
+        TypeRep -- ^ weak   type
+        TypeRep -- ^ strong type
+        String -- ^ weak value
+        String -- ^ failure description
+
+  -- | A failure. Use in abstract instances to avoid heavy contexts. (Remember
+  --   that generic strengtheners should wrap these nicely anyway!)
+  | StrengthenFailOther
+        String -- ^ failure description
 
 instance Show StrengthenFail where
     showsPrec _ = renderShowS . layoutPretty defaultLayoutOptions . pretty
@@ -98,13 +115,27 @@ instance Show StrengthenFail where
 -- TODO shorten value if over e.g. 50 chars. e.g. @[0,1,2,...,255] -> FAIL@
 instance Pretty StrengthenFail where
     pretty = \case
-      StrengthenFailBase wt st wv msg ->
-        vsep [ pretty wt<+>"->"<+>pretty st
-             , pretty wv<+>"->"<+>"FAIL"
-             , pretty msg ]
+      -- TODO give RefineException a nice pretty instance... some helpers should
+      -- be left in the library too
+      StrengthenFailRefine p rex -> vsep
+        [ "refinement: "<+>prettyTypeRep p
+        , "failed with: "<+>pretty (displayRefineException rex)
+        ]
+      StrengthenFailOther msg -> vsep
+        [ pretty msg
+        ]
+      -- TODO we have a lot k
       StrengthenFailField dw _ds cw _cs iw fw _is _fs es ->
         let sw = maybe (show iw) id fw
         in  nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>line<>strengthenFailPretty es
+      StrengthenFailShow wt st wv msg -> vsep
+        [ prettyTypeRep wt<+>"->"<+>prettyTypeRep st
+        , pretty wv<+>"->"<+>"FAIL"
+        , pretty msg
+        ]
+
+prettyTypeRep :: TypeRep -> Doc a
+prettyTypeRep = pretty . show
 
 -- mutually recursive with its 'Pretty' instance. safe, but a bit confusing -
 -- clean up
@@ -112,33 +143,38 @@ strengthenFailPretty :: NonEmpty StrengthenFail -> Doc a
 strengthenFailPretty = vsep . map go . Foldable.toList
   where go e = "-"<+>indent 0 (pretty e)
 
-strengthenFailBase
+strengthenFailShow
     :: forall s w. (Typeable w, Show w, Typeable s)
-    => w -> String -> Validation (NonEmpty StrengthenFail) s
-strengthenFailBase w msg = Failure (e :| [])
-  where e = StrengthenFailBase (show $ typeRep @w) (show $ typeRep @s) (show w) msg
+    => w -> String -> TryStrengthen s
+strengthenFailShow w msg = strengthenFail $ StrengthenFailShow
+    (typeRep' @w) (typeRep' @s) (show w) msg
+
+-- one fail please
+strengthenFail :: StrengthenFail -> TryStrengthen a
+strengthenFail e = Failure (e :| [])
 
 -- | Assert a predicate to refine a type.
-instance (Predicate (p :: k) a, Typeable k, Typeable a, Show a) => Strengthen (Refined p a) where
-    strengthen a =
-        case refine a of
-          Left  err -> strengthenFailBase a (show err)
-          Right ra  -> Success ra
+instance Predicate p a => Strengthen (Refined p a) where
+    strengthen = refine .> \case
+      Left  rex -> strengthenFail $ StrengthenFailRefine (typeRep' @p) rex
+      Right ra  -> Success ra
+
+-- from flow
+(.>) :: (a -> b) -> (b -> c) -> a -> c
+f .> g = g . f
 
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
-instance (Typeable a, Show a) => Strengthen (NonEmpty a) where
-    strengthen a =
-        case NonEmpty.nonEmpty a of
-          Just a' -> Success a'
-          Nothing -> strengthenFailBase a "empty list"
+instance Strengthen (NonEmpty a) where
+    strengthen = NonEmpty.nonEmpty .> maybeToTryStrengthen "empty list"
+
+maybeToTryStrengthen :: String -> Maybe a -> TryStrengthen a
+maybeToTryStrengthen err = \case
+    Just a  -> Success a
+    Nothing -> strengthenFail $ StrengthenFailOther err
 
 -- | Strengthen a plain list into a sized vector by asserting length.
-instance (VG.Vector v a, KnownNat n, Typeable v, Typeable a, Show a)
-  => Strengthen (VGS.Vector v n a) where
-    strengthen w =
-        case VGS.fromList w of
-          Nothing -> strengthenFailBase w "TODO bad size vector"
-          Just s  -> Success s
+instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
+      strengthen = VGS.fromList .> maybeToTryStrengthen "TODO bad size vector"
 
 -- | Add wrapper.
 instance Strengthen (Identity a) where
@@ -167,17 +203,22 @@ instance Strengthen Int16  where strengthen = strengthenBounded
 instance Strengthen Int32  where strengthen = strengthenBounded
 instance Strengthen Int64  where strengthen = strengthenBounded
 
+-- | Strengthen one numeric type into another.
+--
+-- @n@ must be "wider" than @m@.
 strengthenBounded
-    :: forall b n
-    .  (Integral b, Bounded b, Show b, Typeable b, Integral n, Show n, Typeable n)
-    => n -> Validation (NonEmpty StrengthenFail) b
-strengthenBounded n =
-    if   n <= maxB && n >= minB then Success (fromIntegral n)
-    else strengthenFailBase n $ "not well bounded, require: "
-                                 <>show minB<>" <= n <= "<>show maxB
+    :: forall m n
+    .  ( Typeable n, Integral n, Show n
+       , Typeable m, Integral m, Show m, Bounded m
+       ) => n -> TryStrengthen m
+strengthenBounded n
+  | n <= maxB && n >= minB = Success (fromIntegral n)
+  | otherwise = strengthenFailShow n $
+          "not well bounded, require: "
+        <>show minB<>" <= n <= "<>show maxB
   where
-    maxB = fromIntegral @b @n maxBound
-    minB = fromIntegral @b @n minBound
+    maxB = fromIntegral @m @n maxBound
+    minB = fromIntegral @m @n minBound
 
 --------------------------------------------------------------------------------
 

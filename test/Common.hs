@@ -9,6 +9,7 @@ import Test.QuickCheck ( Arbitrary )
 import Numeric.Natural ( Natural )
 import Data.Word
 import Test.QuickCheck.Instances.Natural()
+import Data.Either.Validation
 
 data DS (s :: Strength)
   = DS0 (SW s Word8) (SW s Word8) Word8 (SW s Word8) (SW s Word8)
@@ -48,3 +49,6 @@ instance Weaken     (DP 'Strong) where
     type Weak (DP 'Strong) = DP 'Weak
     weaken = weakenGeneric
 instance Strengthen (DP 'Strong) where strengthen = strengthenGeneric
+
+tryStrengthenSuccessEq :: Eq a => a -> TryStrengthen a -> Bool
+tryStrengthenSuccessEq a = \case Success a' -> a == a'; Failure{} -> False

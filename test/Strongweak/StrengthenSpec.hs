@@ -1,5 +1,6 @@
 module Strongweak.StrengthenSpec ( spec ) where
 
+import Util.Typeable
 import Strongweak
 import Common
 import Data.Either.Validation
@@ -9,55 +10,56 @@ import Numeric.Natural ( Natural )
 import Data.Word
 import Data.List.NonEmpty ( NonEmpty(..) )
 import Data.Foldable qualified as Foldable
+import Data.Typeable
 
 spec :: Spec
 spec = do
     it "returns a precise error for failed generic strengthening (named field)" $ do
         let w = fromIntegral (maxBound @Word32) + 1
             d = DP w 43 1 2 3 :: DP 'Weak
-            e = sfGeneric1
-                    "DP" "DP" "DP" "DP" 0 (Just "dp1f0") 0 (Just "dp1f0")
-                    "Natural" "Word32" w
+            e = sfGenericSW1Show
+                    "DP" "DP" 0 (Just "dp1f0")
+                    (typeRep' @Natural) (typeRep' @Word32) w
         strengthen @(DP 'Strong) d `shouldSatisfy` svEqFail e
     it "returns a precise error for failed generic strengthening (unnamed field)" $ do
         let w = fromIntegral (maxBound @Word8) + 1
             d = DS0 0 1 2 3 w :: DS 'Weak
-            e = sfGeneric1
-                    "DS" "DS" "DS0" "DS0" 4 Nothing 4 Nothing
-                    "Natural" "Word8" w
+            e = sfGenericSW1Show
+                    "DS" "DS0" 4 Nothing
+                    (typeRep' @Natural) (typeRep' @Word8) w
         strengthen @(DS 'Strong) d `shouldSatisfy` svEqFail e
 
-sfGeneric1
+-- build strengthen failure
+-- one failure, generic with SW, one wrapped failure (detailed)
+sfGenericSW1Show
     :: Show w
-    => String -> String -> String -> String
-    -> Natural -> Maybe String -> Natural -> Maybe String
-    -> String -> String -> w
+    => String -> String -> Natural -> Maybe String
+    -> TypeRep -> TypeRep -> w
     -> StrengthenFail
-sfGeneric1 dw ds cw cs iw fw is fs tw ts w =
-    StrengthenFailField dw ds cw cs iw fw is fs (e :| [])
-  where e = StrengthenFailBase tw ts (show w) (error "TODO ignoring msg")
+sfGenericSW1Show d c i f tw ts w =
+    StrengthenFailField d d c c i f i f (e :| [])
+  where
+    e = StrengthenFailShow tw ts (show w) msg
+    msg = error "tried to check failure descriptions in tests (bad idea)"
 
-sfEqIgnoreMsg :: StrengthenFail -> StrengthenFail -> Bool
-sfEqIgnoreMsg s1 s2 = case s1 of
+-- only test field and show, and ignore message in latter
+sfEq :: StrengthenFail -> StrengthenFail -> Bool
+sfEq s1 s2 = case s1 of
   StrengthenFailField   dw  ds  cw  cs  iw  fw  is  fs  es -> case s2 of
     StrengthenFailField dw' ds' cw' cs' iw' fw' is' fs' es' ->
-         dw == dw'
-      && ds == ds'
-      && cw == cw'
-      && cs == cs'
-      && iw == iw'
-      && fw == fw'
-      && is == is'
-      && fs == fs'
-      && and (zipWith sfEqIgnoreMsg (Foldable.toList es) (Foldable.toList es'))
+         dw == dw' && ds == ds'
+      && cw == cw' && cs == cs'
+      && iw == iw' && is == is'
+      && fw == fw' && fs == fs'
+      && and (zipWith sfEq (Foldable.toList es) (Foldable.toList es'))
     _ -> False
-  StrengthenFailBase   wt  st  wv  _ -> case s2 of
-    StrengthenFailBase wt' st' wv' _ ->
-         wt == wt'
-      && st == st'
-      && wv == wv'
+  StrengthenFailShow   wt  st  wv  _ -> case s2 of
+    StrengthenFailShow wt' st' wv' _ ->
+         wt  == wt' && st == st'
+      && wv  == wv'
     _ -> False
+  _ -> error "unexpected strengthen fail"
 
 svEqFail :: StrengthenFail -> Validation (NonEmpty StrengthenFail) s -> Bool
-svEqFail e = \case Failure (e' :| []) -> sfEqIgnoreMsg e e'
+svEqFail e = \case Failure (e' :| []) -> sfEq e e'
                    _ -> False

@@ -36,6 +36,7 @@ library
       Strongweak.Strengthen
       Strongweak.Strengthen.Unsafe
       Strongweak.Weaken
+      Util.Typeable
   other-modules:
       Paths_strongweak
   hs-source-dirs:
