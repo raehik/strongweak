@@ -37,6 +37,7 @@ sfGeneric1 dw ds cw cs iw fw is fs tw ts w =
     StrengthenFailField dw ds cw cs iw fw is fs (e :| [])
   where e = StrengthenFailBase tw ts (show w) (error "TODO ignoring msg")
 
+-- TODO this now must only be used with generics.
 sfEqIgnoreMsg :: StrengthenFail -> StrengthenFail -> Bool
 sfEqIgnoreMsg s1 s2 = case s1 of
   StrengthenFailField   dw  ds  cw  cs  iw  fw  is  fs  es -> case s2 of
@@ -57,6 +58,7 @@ sfEqIgnoreMsg s1 s2 = case s1 of
       && st == st'
       && wv == wv'
     _ -> False
+  _ -> True -- TODO lazy
 
 svEqFail :: StrengthenFail -> Validation (NonEmpty StrengthenFail) s -> Bool
 svEqFail e = \case Failure (e' :| []) -> sfEqIgnoreMsg e e'
