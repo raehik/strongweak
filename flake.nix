@@ -3,6 +3,10 @@
     #nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     #flake-parts.url = "github:hercules-ci/flake-parts";
     haskell-flake.url = "github:srid/haskell-flake";
+    refined = {
+      url = "github:raehik/refined/refined1";
+      flake = false;
+    };
   };
   outputs = inputs@{ nixpkgs, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -15,7 +19,9 @@
             strongweak.root = ./.;
           };
           # buildTools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
-          # overrides = self: super: { }
+          overrides = self: super: {
+            #refined = self.callCabal2nix "refined" inputs.refined {};
+          };
           # hlintCheck.enable = true;
           # hlsCheck.enable = true;
         };
