@@ -1,6 +1,7 @@
 module Common where
 
 import Strongweak
+import Strongweak.Strengthen qualified as Strengthen
 import Strongweak.Generic
 import Refined hiding ( Weaken, weaken, strengthen, NonEmpty )
 import GHC.Generics ( Generic )
@@ -50,5 +51,5 @@ instance Weaken     (DP 'Strong) where
     weaken = weakenGeneric
 instance Strengthen (DP 'Strong) where strengthen = strengthenGeneric
 
-tryStrengthenSuccessEq :: Eq a => a -> TryStrengthen a -> Bool
+tryStrengthenSuccessEq :: Eq a => a -> Strengthen.Result a -> Bool
 tryStrengthenSuccessEq a = \case Success a' -> a == a'; Failure{} -> False

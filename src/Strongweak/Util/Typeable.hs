@@ -1,6 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Util.Typeable where
+module Strongweak.Util.Typeable where
 
 import Data.Typeable
 

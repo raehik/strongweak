@@ -54,8 +54,14 @@ ghc-options:
 # `pkg ^>= x.y.z` means `pkg >= x.y.z && < x.(y+1)
 dependencies:
 - base >= 4.14 && < 5
+
+# strengthening
 - either ^>= 5.0.1.1
+- acc ^>= 0.2.0.1
+- text ^>= 1.2.5.0
 - prettyprinter ^>= 1.7.1
+
+# instances
 - refined >= 0.7 && < 0.9
 - vector-sized ^>= 1.5.0
 - vector >= 0.12.3.1 && < 0.14

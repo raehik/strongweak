@@ -15,7 +15,6 @@ module Strongweak.Generic.Strengthen where
 
 import Strongweak.Strengthen
 import Data.Either.Validation
-import Data.List.NonEmpty
 import GHC.Generics
 import Data.Kind
 import GHC.TypeNats
@@ -29,12 +28,12 @@ import Control.Applicative ( liftA2 )
 -- the definition of compatibility in this context.
 strengthenGeneric
     :: (Generic w, Generic s, GStrengthenD (Rep w) (Rep s))
-    => w -> Validation (NonEmpty StrengthenFail) s
+    => w -> Result s
 strengthenGeneric = fmap to . gstrengthenD . from
 
 -- | Generic strengthening at the datatype level.
 class GStrengthenD w s where
-    gstrengthenD :: w p -> Validation (NonEmpty StrengthenFail) (s p)
+    gstrengthenD :: w p -> Result (s p)
 
 -- | Enter a datatype, stripping its metadata wrapper.
 instance GStrengthenC wcd scd w s => GStrengthenD (D1 wcd w) (D1 scd s) where
@@ -42,7 +41,7 @@ instance GStrengthenC wcd scd w s => GStrengthenD (D1 wcd w) (D1 scd s) where
 
 -- | Generic strengthening at the constructor sum level.
 class GStrengthenC wcd scd w s where
-    gstrengthenC :: w p -> Validation (NonEmpty StrengthenFail) (s p)
+    gstrengthenC :: w p -> Result (s p)
 
 -- | Nothing to do for empty datatypes.
 instance GStrengthenC wcd scd V1 V1 where gstrengthenC = Success
@@ -62,7 +61,7 @@ instance GStrengthenS wcd scd wcc scc 0 w s
 
 -- | Generic strengthening at the constructor level.
 class GStrengthenS wcd scd wcc scc (si :: Natural) w s where
-    gstrengthenS :: w p -> Validation (NonEmpty StrengthenFail) (s p)
+    gstrengthenS :: w p -> Result (s p)
 
 -- | Nothing to do for empty constructors.
 instance GStrengthenS wcd scd wcc scc si U1 U1 where gstrengthenS = Success
@@ -92,9 +91,9 @@ instance {-# OVERLAPS #-}
   ) => GStrengthenS wcd scd wcc scc si (S1 wcs (Rec0 w)) (S1 scs (Rec0 s)) where
     gstrengthenS = unM1 .> unK1 .> strengthen .> \case
       Success s  -> Success $ M1 $ K1 s
-      Failure es -> Failure $ e :| []
+      Failure es -> Failure $ pure e
         where
-          e = StrengthenFailField wcd scd wcc scc si wcs si scs es
+          e = FailField wcd scd wcc scc si wcs si scs es
           wcd = datatypeName' @wcd
           scd = datatypeName' @scd
           wcc = conName' @wcc

@@ -1,16 +1,17 @@
 module Strongweak.StrengthenSpec ( spec ) where
 
-import Util.Typeable
+import Strongweak.Util.Typeable
+import Strongweak.Util.Text
 import Strongweak
+import Strongweak.Strengthen
 import Common
 import Data.Either.Validation
 import Test.Hspec
 
 import Numeric.Natural ( Natural )
 import Data.Word
-import Data.List.NonEmpty ( NonEmpty(..) )
 import Data.Foldable qualified as Foldable
-import Data.Typeable
+import Data.Typeable ( TypeRep )
 
 spec :: Spec
 spec = do
@@ -35,31 +36,35 @@ sfGenericSW1Show
     :: Show w
     => String -> String -> Natural -> Maybe String
     -> TypeRep -> TypeRep -> w
-    -> StrengthenFail
+    -> Fail
 sfGenericSW1Show d c i f tw ts w =
-    StrengthenFailField d d c c i f i f (e :| [])
+    FailField d d c c i f i f (pure e)
   where
-    e = StrengthenFailShow tw ts (show w) msg
-    msg = error "tried to check failure descriptions in tests (bad idea)"
+    e = FailShow tw ts (Just (tshow w)) detail
+    detail = error "tried to check failure descriptions in tests (bad idea)"
 
 -- only test field and show, and ignore message in latter
-sfEq :: StrengthenFail -> StrengthenFail -> Bool
+sfEq :: Fail -> Fail -> Bool
 sfEq s1 s2 = case s1 of
-  StrengthenFailField   dw  ds  cw  cs  iw  fw  is  fs  es -> case s2 of
-    StrengthenFailField dw' ds' cw' cs' iw' fw' is' fs' es' ->
+  FailField   dw  ds  cw  cs  iw  fw  is  fs  es -> case s2 of
+    FailField dw' ds' cw' cs' iw' fw' is' fs' es' ->
          dw == dw' && ds == ds'
       && cw == cw' && cs == cs'
       && iw == iw' && is == is'
       && fw == fw' && fs == fs'
       && and (zipWith sfEq (Foldable.toList es) (Foldable.toList es'))
     _ -> False
-  StrengthenFailShow   wt  st  wv  _ -> case s2 of
-    StrengthenFailShow wt' st' wv' _ ->
+  FailShow   wt  st  wv  _ -> case s2 of
+    FailShow wt' st' wv' _ ->
          wt  == wt' && st == st'
       && wv  == wv'
     _ -> False
   _ -> error "unexpected strengthen fail"
 
-svEqFail :: StrengthenFail -> Validation (NonEmpty StrengthenFail) s -> Bool
-svEqFail e = \case Failure (e' :| []) -> sfEq e e'
-                   _ -> False
+svEqFail :: Fail -> Result s -> Bool
+svEqFail e = \case
+  Success{}  -> False
+  Failure es ->
+    case Foldable.toList es of
+      [e'] -> sfEq e e'
+      _    -> False

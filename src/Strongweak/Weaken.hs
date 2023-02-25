@@ -1,16 +1,18 @@
+{-# LANGUAGE UndecidableInstances #-} -- for SWDepth
+
 module Strongweak.Weaken
   (
   -- * 'Weaken' class
     Weaken(..)
   , liftWeakF
 
-  -- * 'SW' helper
+  -- * Strength switch helper
   , Strength(..)
-  , SW
+  , type SW
+  , type SWDepth
   ) where
 
 import Refined ( Refined, unrefine )
-import Numeric.Natural ( Natural )
 import Data.Word
 import Data.Int
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
@@ -20,6 +22,7 @@ import Data.Functor.Identity
 import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
+import GHC.TypeNats
 
 {- | Weaken some @a@, relaxing certain invariants.
 
@@ -32,7 +35,8 @@ class Weaken a where
     -- | Weaken some @a@ to its associated weak type @'Weak' a@.
     weaken :: a -> Weak a
 
--- | Lift a function on a weak type to the associated strong type.
+-- | Lift a function on a weak type to the associated strong type by weakening
+--   first.
 liftWeakF :: Weaken a => (Weak a -> b) -> (a -> b)
 liftWeakF f = f . weaken
 
@@ -57,6 +61,12 @@ data A (s :: Strength) = A
 type family SW (s :: Strength) a :: Type where
     SW 'Strong a = a
     SW 'Weak   a = Weak a
+
+-- | Track multiple levels of weakening. Silly thought I had, don't think it's
+--   useful.
+type family SWDepth (n :: Natural) a :: Type where
+    SWDepth 0 a = a
+    SWDepth n a = Weak (SWDepth (n-1) a)
 
 -- | Strip refined type refinement.
 instance Weaken (Refined p a) where

@@ -1,12 +1,24 @@
-{-# LANGUAGE UndecidableInstances #-}
+{- | Main import module for basic use.
+
+For defining 'Strengthen' instances, import "Strongweak.Strengthen".
+-}
+
 module Strongweak
   (
   -- * Instance design
   -- $strongweak-instance-design
 
-  -- * Re-exports
-    module Strongweak.Weaken
-  , module Strongweak.Strengthen
+  -- * Classes
+    Weaken(..)
+  , Strengthen(..)
+
+  -- * Other definitions
+  , liftWeakF
+
+  -- * Strength switch wrapper
+  , Strength(..)
+  , type SW
+
   ) where
 
 import Strongweak.Weaken
