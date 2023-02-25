@@ -3,7 +3,9 @@
 
 # strongweak
 Purely convert between pairs of "weak" and "strong"/"validated" types, with good
-errors and generic derivers.
+errors and generic derivers. Perhaps a pure approximation Alexis King's [Parse,
+don't validate][parse-dont-validate] pattern as a library, focused on failure
+reporting.
 
 ## Definition of strong and weak types
 Take a pair of types `(strong, weak)`. We state the following:
@@ -13,14 +15,13 @@ Take a pair of types `(strong, weak)`. We state the following:
     but it may fail.
 
 As a rule, a weak type should be *easier to use* than its related strong type.
-That is, it should have fewer invariants to consider or maintain. You could
-weaken an `a` to a `Maybe a`, but since a `Maybe a` is harder to use, it's not a
-candidate for this library.
+That is, it should have fewer invariants to consider or maintain. One could
+weaken an `a` to a `Maybe a`, but since a `Maybe a` is harder to use, I'm less
+certain about adding it to this library. (I don't know, perhaps it should be.)
 
-As an arbitrary limitation for ease of use, a strong type has only one
-associated weak type. The same weak type may be used for multiple strong types.
-This restriction guides the design of "good" strong-weak type pairs & keeps them
-synchronized, plus helps type inference.
+A strong type may have only one associated weak type. The same weak type may be
+used for multiple strong types. This restriction guides the design of "good"
+strong-weak type pairs, keeps them synchronized, and aids type inference.
 
 ### Examples
 The [refined][lib-refined-hackage] library defines a `newtype Refined p a =
@@ -33,10 +34,14 @@ weak type, which can be strengthened into e.g. `Word8` by asserting
 well-boundedness.
 
 ## Cool points
-### Validates as much as possible
-This is primarily a validation library. Thus, we don't fail on the first error
--- we attempt to validate every part of a data type, and collate the errors into
-a big list. (`ApplicativeDo` plus `Validation` is magical.)
+### Extreme error clarity
+strongweak is primarily a validation library. As such, strengthening failure
+handling receives special attention:
+
+  * Failures do not short-circuit; if a strengthening is made up of multiple
+    smaller strengthenings, all are run and any failures collated.
+  * Failures display the weak and strong (target) type.
+  * Generic strengthening is scarily verbose: see below for details.
 
 ### One definition, strong + weak views
 Using a type-level `Strength` switch and the `SW` type family, you can write a
@@ -44,22 +49,24 @@ single datatype definition and receive both a strong and a weak representation,
 which the generic derivers can work with. See the `Strongweak.SW` module for
 details.
 
-### Generic strengthening is extremely powerful
+### Powerful generic instances
 There are generic derivers for generating `Strengthen` and `Weaken` instances
 between arbitrary data types. The `Strengthen` instances annotate errors
-extensively, telling you the datatype & record for which strengthening failed -
-recursively, for nested types!
+extensively, telling you the datatype, constructor and field for which
+strengthening failed!
 
-Note that the generic derivers work with any pair of matching data types. But
-they must match very closely: both types are traversed in tandem, so every pair
-of fields must be compatible. If you need to do calculation to move between your
-strong and weak types, consider splitting it into calculation -> strengthening
-and using the generic derivers. Or write your own instances.
+Note that the generic derivers require your the generic SOP representation of
+your strong and weak types to match precisely. The `SW` type family is here to
+help for accomplishing that. Otherwise, if your types don't fit:
+
+  * convert to a "closer" representation first, or
+  * write your own instances (fairly simple with `ApplicativeDo`).
 
 ### Backdoors included
 Sometimes you have can guarantee that a weak value can be safely strengthened,
 but the compiler doesn't know - a common problem in parsing. In such cases, you
 may use efficient unsafe strengthenings, which don't perform invariant checks.
+Even better, they might explode your computer if you use them wrong!
 
 ## What this library isn't
 ### Not a convertible
@@ -70,12 +77,18 @@ via typeclasses, consider Taylor Fausak's
 [witch](https://hackage.haskell.org/package/witch) library.
 
 ### Not particularly speedy
-The emphasis is on safety, possibly at the detriment of performance. However, my
-expectation is that you only strengthen & weaken at the "edges" of your program,
-and most of the time will be spent transforming weak representations. This may
-improve performance if it means invariants don't have to be continually asserted
-inline, but it also may slow things down e.g. `Natural`s are slower than
-`Word`s.
+The emphasis is on safety, which may come at the detriment of performance:
+
+  * Strengthening and weakening might be slow. This depends on the type and the
+    implementation. I try a little to ensure good performance, but not a lot.
+  * Strong types can be more performant than their weak counterparts. For
+    example, swapping all integrals for `Natural`s and `Integer`s will make your
+    program slow.
+    * You may avoid this fairly easily by simply not wrapping certain fields.
+
+On the other hand, by only strengthening at the "edges" of your program and
+knowing that between those you may transform the weak representation as you
+like, you may find good performance easier to maintain.
 
 ## Related projects
 ### barbies
