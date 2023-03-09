@@ -58,7 +58,7 @@ dependencies:
 # strengthening
 - either ^>= 5.0.1.1
 - acc ^>= 0.2.0.1
-- text ^>= 1.2.5.0
+- text >= 1.2.5.0 && <2.1
 - prettyprinter ^>= 1.7.1
 
 # instances
