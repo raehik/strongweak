@@ -3,6 +3,10 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     haskell-flake.url = "github:srid/haskell-flake";
+    refined = {
+      url = "github:raehik/refined/refined1";
+      flake = false;
+    };
   };
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -25,7 +29,9 @@
 
           # Dependency overrides go here. See https://haskell.flake.page/dependency
           # source-overrides = { };
-          # overrides = self: super: { };
+          overrides = self: super: with pkgs.haskell.lib; {
+            refined = self.callCabal2nix "refined" inputs.refined {};
+          };
 
           # devShell = {
           #  # Enabled by default
