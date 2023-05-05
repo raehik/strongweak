@@ -8,6 +8,7 @@ don't validate][parse-dont-validate] pattern as a library.
 
 ## What? Why?
 [refined-blog]: http://nikita-volkov.github.io/refined/
+[refined-hackage]: https://hackage.haskell.org/package/refined
 
 Haskell is a wonderful language for accurate data modelling. Algebraic data
 types (and GADTs as a fancy extension) enable defining highly restricted types
@@ -50,6 +51,9 @@ strengthen :: W -> Maybe S
 Oh! So this is like a parser-printer pair for arbitrary data. It seems like a
 useful enough pattern. Let's think of some strongweak pairs:
 
+  * `Refined p a` from the [refined][refined-hackage] library is an `a` where
+    the predicate `p` has been asserted. This can be weakened into an `a` via
+    `unrefine:: Refined p a -> a`.
   * `Word8` is a bounded natural number. `Natural` can represent any natural
     number. So `Natural` is a weak type, which can be strengthened into `Word8`
     (or `Word16`, `Word32`, ...) by asserting well-boundedness.
