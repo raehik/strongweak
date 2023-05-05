@@ -1,3 +1,8 @@
+## 0.5.0 (2023-05-05)
+  * allow text-2.0
+  * refactor strengthening code, rename some definitions
+  * use NeAcc instead of NonEmpty for strengthening failures
+
 ## 0.4.1 (2023-02-22)
   * add `DerivingVia` wrapper for generic instances (like `Generically`)
 

@@ -2,36 +2,92 @@
 [lib-barbies-hackage]: https://hackage.haskell.org/package/barbies
 
 # strongweak
-Purely convert between pairs of "weak" and "strong"/"validated" types, with good
-errors and generic derivers. Perhaps a pure approximation Alexis King's [Parse,
-don't validate][parse-dont-validate] pattern as a library, focused on failure
-reporting.
+Purely convert between pairs of "weak" and "strong"/"validated" types, with
+extensive failure reporting and powerful generic derivers. Alexis King's [Parse,
+don't validate][parse-dont-validate] pattern as a library.
 
-## Definition of strong and weak types
-Take a pair of types `(strong, weak)`. We state the following:
+## What? Why?
+[refined-blog]: http://nikita-volkov.github.io/refined/
 
-  * You may safely convert ("weaken") any `strong` value to a `weak` value.
-  * You can try to convert ("strengthen") any `weak` value to a `strong` value,
-    but it may fail.
+Haskell is a wonderful language for accurate data modelling. Algebraic data
+types (and GADTs as a fancy extension) enable defining highly restricted types
+which prevent even *representing* invalid or unwanted values. Great! And for the
+common case where you want to assert some predicate on a value but not change it
+(i.e. validate), we have the powerful [refined][refined-blog] library to reflect
+the existence of an asserted predicate in types. Fantastic!
 
-As a rule, a weak type should be *easier to use* than its related strong type.
-That is, it should have fewer invariants to consider or maintain. One could
-weaken an `a` to a `Maybe a`, but since a `Maybe a` is harder to use, I'm less
-certain about adding it to this library. (I don't know, perhaps it should be.)
+Sadly I'm often grounded by "Reality", who insists that we don't use these
+features everywhere because manipulating more complex types often means more
+busywork on the term level. So I resort to less accurate data models, or
+validating somewhat arbitrarily without assistance from the type system. I can
+often feel Alexis King looking disapprovingly at me.
 
-A strong type may have only one associated weak type. The same weak type may be
-used for multiple strong types. This restriction guides the design of "good"
-strong-weak type pairs, keeps them synchronized, and aids type inference.
+What if we defined two separate representations for a given model?
 
-### Examples
-The [refined][lib-refined-hackage] library defines a `newtype Refined p a =
-Refined a`. To get a `Refined`, you must test its associated predicate. You may
-recover the unrefined value by removing the newtype wrapper. Thus, you may
-strengthen `a`s into `Refined p a`s, and weaken vice versa.
+  * A **strong** representation, where no invalid values are permitted.
+    (Promise.)
+  * A **weak** representation, which doesn't necessarily enforce all the
+    invariants that the strong representation does, but is easier to manipulate.
 
-The `WordX` family are like bounded `Natural`s. We can consider `Natural` as a
-weak type, which can be strengthened into e.g. `Word8` by asserting
-well-boundedness.
+This way, we can use strong representations wherever possible e.g. passing
+between subsystems, and shift to the weak representation for intensive
+manipulation (and then back to strong at the end). Potential wins for
+simplicity, brevity and performance, albeit for some conversion overhead.
+
+Let's formalize the above as a pair of types `S` and `W`.
+
+  * Given a `strong :: S`, we can always turn it into a `weak :: W`.
+  * Given a `weak :: W`, we can only turn it into a `strong :: S` if it passes
+    all the checks
+
+We can write these as pure functions.
+
+```haskell
+weaken     :: S ->       W
+strengthen :: W -> Maybe S
+```
+
+Oh! So this is like a parser-printer pair for arbitrary data. It seems like a
+useful enough pattern. Let's think of some strongweak pairs:
+
+  * `Word8` is a bounded natural number. `Natural` can represent any natural
+    number. So `Natural` is a weak type, which can be strengthened into `Word8`
+    (or `Word16`, `Word32`, ...) by asserting well-boundedness.
+  * `[a]` doesn't have state any predicates. But we could weaken every `a` in
+    the list. So `[a]` is a strong type, which can be weakened to `[Weak a]`.
+  * `NonEmpty a` *does* have a predicate. For useability and other reasons, we
+    only handle this predicate, and don't also weaken each `a` like above.
+    `NonEmpty a` weakens to `[a]`.
+
+But there's a hefty amount of boilerplate:
+
+  * You need to model all the data types you want to use like this twice.
+  * You need to write tons more definitions.
+
+Aaaand it's already not worth it. Sigh.
+
+## Library introduction
+strongweak encodes the above strong/weak representation pattern for convenient
+use, automating as much as possible. Some decisions restrict usage for nicer
+behaviour. The primary definitions are below:
+
+```haskell
+class Weaken a where
+    type Weak a :: Type
+    weaken :: a :: Weak a
+
+type Result = Validation Fails
+type Fails = NeAcc Fail
+class Weaken a => Strengthen a where
+    strengthen :: Weak a -> Result a
+```
+
+Note that a strong type may have only one associated weak type. The same weak
+type may be used for multiple strong types. This restriction guides the design
+of "good" strong-weak type pairs, keeps them synchronized, and aids type
+inference.
+
+See the documentation on Hackage for further details.
 
 ## Cool points
 ### Extreme error clarity
@@ -51,15 +107,20 @@ details.
 
 ### Powerful generic instances
 There are generic derivers for generating `Strengthen` and `Weaken` instances
-between arbitrary data types. The `Strengthen` instances annotate errors
+between *compatible* data types. The `Strengthen` instances annotate errors
 extensively, telling you the datatype, constructor and field for which
 strengthening failed!
 
-Note that the generic derivers require your the generic SOP representation of
-your strong and weak types to match precisely. The `SW` type family is here to
-help for accomplishing that. Otherwise, if your types don't fit:
+Two types are *compatible* if
 
-  * convert to a "closer" representation first, or
+  * their generic SOP representations match precisely, and
+  * every pair of leaf types is either identical or has the appropriate
+    strengthen/weaken instance
+
+The `SW` type family is here to help for accomplishing that. Otherwise, if your
+types don't fit:
+
+  * convert to a "closer" representation first
   * write your own instances (fairly simple with `ApplicativeDo`).
 
 ### Backdoors included
@@ -110,3 +171,10 @@ split strengthening into two phases: strengthening each field, then gathering
 via traverse (rather than doing both at once via applicative do). That thinking
 helps reassure me that these ideas are separate. *(Note: I would hesitate to
 write such a type, because the definition would start to get mighty complex.)*
+
+## Other
+### Can this be formalized or generalized in some useful way?
+I note that this library is basically a couple of type classes and utilities for
+automating writing parsers and printers for types which are "close". I can't
+find anything in the literature that discusses this sort of thing. If you would
+have some info there, please do let me know!
