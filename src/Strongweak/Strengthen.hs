@@ -189,10 +189,21 @@ maybeFailShow detail = \case
     Nothing -> failShowNoVal @(Weak a) detail
 
 -- | Assert a predicate to refine a type.
-instance (Predicate (p :: k) a, Typeable k, Typeable a)
+instance (Predicate p a, Typeable a)
   => Strengthen (Refined p a) where
     strengthen = refine .> \case
       Left  rex -> failShowNoVal @a
+        [ "refinement: "<>tshow (typeRep' @p)
+        , "failed with..."
+        , tshow (displayRefineException rex)
+        ]
+      Right ra  -> Success ra
+
+-- | Assert a functor predicate to refine a type.
+instance (Predicate1 p f, Typeable f, Typeable (a :: ak), Typeable ak)
+  => Strengthen (Refined1 p f a) where
+    strengthen = refine1 .> \case
+      Left  rex -> failShowNoVal @(f a)
         [ "refinement: "<>tshow (typeRep' @p)
         , "failed with..."
         , tshow (displayRefineException rex)
