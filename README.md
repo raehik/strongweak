@@ -53,7 +53,7 @@ useful enough pattern. Let's think of some strongweak pairs:
 
   * `Refined p a` from the [refined][refined-hackage] library is an `a` where
     the predicate `p` has been asserted. This can be weakened into an `a` via
-    `unrefine:: Refined p a -> a`.
+    `unrefine :: Refined p a -> a`.
   * `Word8` is a bounded natural number. `Natural` can represent any natural
     number. So `Natural` is a weak type, which can be strengthened into `Word8`
     (or `Word16`, `Word32`, ...) by asserting well-boundedness.
