@@ -1,8 +1,14 @@
 pkgs:
 
 {
+  # 2023-05-10 raehik: always use these for package sets. otherwise things get
+  # weird (overrides might not work)
+  packages = {};
+  devShell.enable = false;
+  autoWire = [];
 
   basePackages = pkgs.haskell.packages.ghc96;
+
   overrides = self: super: with pkgs.haskell.lib; {
     # 2023-04-17 raehik: hourglass tests broken from GHC 9.2.5
     # PR: https://github.com/vincenthz/hs-hourglass/pull/56
@@ -35,14 +41,6 @@ pkgs:
 
     # 2023-04-26 raehik: weird bug. bad test.
     doctest-exitcode-stdio = doJailbreak super.doctest-exitcode-stdio;
-  };
-
-  devShell = {
-    enable = false;
-#    tools = hp: {
-#      ghcid = null; # broken on GHC 9.6? old fsnotify
-#      hlint = null; # broken on GHC 9.6? old
-#    };
   };
 
 }

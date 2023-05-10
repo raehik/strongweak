@@ -62,7 +62,7 @@ dependencies:
 - prettyprinter ^>= 1.7.1
 
 # instances
-- refined >= 0.7 && < 0.9
+- refined1 ^>= 0.9
 - vector-sized ^>= 1.5.0
 - vector >= 0.12.3.1 && < 0.14
 
