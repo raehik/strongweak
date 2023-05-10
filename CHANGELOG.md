@@ -1,3 +1,7 @@
+## 0.6.0 (2023-05-10)
+  * add instances for `Refined1 p f a`; use refined1 library instead of refined
+    (pending upstream)
+
 ## 0.5.0 (2023-05-05)
   * allow text-2.0
   * refactor strengthening code, rename some definitions
