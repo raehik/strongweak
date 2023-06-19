@@ -20,8 +20,8 @@
         haskellProjects.default = {
           basePackages = config.haskellProjects.ghc96.outputs.finalPackages;
 
-          source-overrides = {
-            refined1 = inputs.refined1;
+          packages = {
+            refined1.source = inputs.refined1;
           };
 
           devShell = {
