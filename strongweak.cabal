@@ -88,14 +88,14 @@ test-suite spec
       MagicHash
   ghc-options: -Wall
   build-tool-depends:
-      hspec-discover:hspec-discover >=2.7 && <2.10
+      hspec-discover:hspec-discover >=2.7 && <2.12
   build-depends:
       QuickCheck >=2.14.2 && <2.15
     , acc >=0.2.0.1 && <0.3
     , base >=4.14 && <5
     , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
-    , hspec >=2.7 && <2.11
+    , hspec >=2.7 && <2.12
     , prettyprinter >=1.7.1 && <1.8
     , quickcheck-instances >=0.3.26 && <0.4
     , refined1 ==0.9.*
