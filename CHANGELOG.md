@@ -1,3 +1,6 @@
+## 0.6.1 (2024-04-03)
+  * tests: relax hspec upper bound
+
 ## 0.6.0 (2023-05-10)
   * add instances for `Refined1 p f a`; use refined1 library instead of refined
     (pending upstream)
