@@ -3,7 +3,8 @@ module Common where
 import Strongweak
 import Strongweak.Strengthen qualified as Strengthen
 import Strongweak.Generic
-import Refined hiding ( Weaken, weaken, strengthen, NonEmpty )
+import Rerefined
+import Rerefined.Predicates
 import GHC.Generics ( Generic )
 import Generic.Random
 import Test.QuickCheck ( Arbitrary )
@@ -14,7 +15,7 @@ import Data.Either.Validation
 
 data DS (s :: Strength)
   = DS0 (SW s Word8) (SW s Word8) Word8 (SW s Word8) (SW s Word8)
-  | DS1 (SW s (Refined (LessThan 100) Natural))
+  | DS1 (SW s (Refined (CompareValue LT Pos 100) Natural))
     deriving stock (Generic)
 
 deriving stock instance Eq   (DS 'Strong)
@@ -32,7 +33,7 @@ instance Strengthen (DS 'Strong) where strengthen = strengthenGeneric
 
 data DP (s :: Strength) = DP
   { dp1f0 :: SW s Word32
-  , dp1f1 :: SW s (Refined (GreaterThan 42) Natural)
+  , dp1f1 :: SW s (Refined (CompareValue GT Pos 42) Natural)
   , dp1f2 :: SW s Word8
   , dp1f3 :: Word8
   , dp1f4 :: SW s Word8

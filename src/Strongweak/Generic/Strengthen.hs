@@ -20,7 +20,7 @@ import Data.Kind
 import GHC.TypeNats
 import GHC.Exts ( proxy#, Proxy# )
 
-import Control.Applicative ( liftA2 )
+import Control.Applicative ( liftA2 ) -- required for older GHCs
 
 -- | Strengthen a value generically.
 --

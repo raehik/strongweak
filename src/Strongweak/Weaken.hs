@@ -12,7 +12,7 @@ module Strongweak.Weaken
   , type SWDepth
   ) where
 
-import Refined ( Refined, unrefine, Refined1, unrefine1 )
+import Rerefined
 import Data.Word
 import Data.Int
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
@@ -35,15 +35,15 @@ class Weaken a where
     -- | Weaken some @a@ to its associated weak type @'Weak' a@.
     weaken :: a -> Weak a
 
--- | Lift a function on a weak type to the associated strong type by weakening
---   first.
-liftWeakF :: Weaken a => (Weak a -> b) -> (a -> b)
-liftWeakF f = f . weaken
-
 -- | Strength enumeration: is it strong, or weak?
 --
 -- Primarily interesting at the type level (using DataKinds).
 data Strength = Strong | Weak
+
+-- | Lift a function on a weak type to the associated strong type by weakening
+--   first.
+liftWeakF :: Weaken a => (Weak a -> b) -> (a -> b)
+liftWeakF f = f . weaken
 
 {- | Get either the strong or weak representation of a type, depending on the
      type-level "switch" provided.

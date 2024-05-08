@@ -59,7 +59,7 @@ library
     , base >=4.14 && <5
     , either >=5.0.1.1 && <5.1
     , prettyprinter >=1.7.1 && <1.8
-    , refined1 ==0.9.*
+    , rerefined >=0.3.0 && <0.4
     , text >=1.2.5.0 && <2.1
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
@@ -98,7 +98,7 @@ test-suite spec
     , hspec >=2.7 && <2.12
     , prettyprinter >=1.7.1 && <1.8
     , quickcheck-instances >=0.3.26 && <0.4
-    , refined1 ==0.9.*
+    , rerefined >=0.3.0 && <0.4
     , strongweak
     , text >=1.2.5.0 && <2.1
     , vector >=0.12.3.1 && <0.14

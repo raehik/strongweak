@@ -28,6 +28,9 @@ deriving via (GenericallySW (XYZ 'Strong) (XYZ 'Weak)) instance Strengthen (XYZ 
 @
 
 TODO can't figure out a way around multiple standalone deriving declarations :(
+
+TODO maybe GenericallySW1? but even so instances differ between weaken and
+strengthen (weaken needs nothing) so it's kinda better this way. :)
 -}
 
 newtype GenericallySW s (w :: Type) = GenericallySW { unGenericallySW :: s }

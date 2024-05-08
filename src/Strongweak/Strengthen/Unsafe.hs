@@ -3,8 +3,7 @@ module Strongweak.Strengthen.Unsafe where
 import Strongweak.Weaken
 import Data.Word
 import Data.Int
-import Refined ( Refined )
-import Refined.Unsafe ( reallyUnsafeRefine )
+import Rerefined.Refine.Unsafe
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Vector.Generic.Sized.Internal qualified
@@ -37,7 +36,7 @@ class Weaken a => UnsafeStrengthen a where
 
 -- | Add a refinement to a type without checking the associated predicate.
 instance UnsafeStrengthen (Refined p a) where
-    unsafeStrengthen = reallyUnsafeRefine
+    unsafeStrengthen = unsafeRefine
 
 -- | Assume a plain list is non-empty.
 instance UnsafeStrengthen (NonEmpty a) where

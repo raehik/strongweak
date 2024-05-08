@@ -41,11 +41,11 @@ import Data.Text.Lazy qualified as Text.Lazy
 import GHC.TypeNats ( Natural, KnownNat )
 import Data.Word
 import Data.Int
-import Refined hiding ( Weaken, weaken, strengthen, NonEmpty )
+import Rerefined
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Foldable qualified as Foldable
-import Control.Applicative ( liftA2 )
+import Control.Applicative ( liftA2 ) -- required for older GHCs
 import Data.Functor.Identity
 import Data.Functor.Const
 import Acc.NeAcc
@@ -189,26 +189,26 @@ maybeFailShow detail = \case
     Nothing -> failShowNoVal @(Weak a) detail
 
 -- | Assert a predicate to refine a type.
-instance (Predicate p a, Typeable a)
-  => Strengthen (Refined p a) where
+instance (Refine p a, Typeable a, Typeable p, Typeable k)
+  => Strengthen (Refined (p :: k) a) where
     strengthen = refine .> \case
-      Left  rex -> failShowNoVal @a
+      Left  rf -> failShowNoVal @a
         [ "refinement: "<>tshow (typeRep' @p)
         , "failed with..."
-        , tshow (displayRefineException rex)
+        , prettyRefineFailure rf
         ]
-      Right ra  -> Success ra
+      Right ra -> Success ra
 
 -- | Assert a functor predicate to refine a type.
-instance (Predicate1 p f, Typeable f, Typeable (a :: ak), Typeable ak)
-  => Strengthen (Refined1 p f a) where
+instance (Refine1 p f, Typeable f, Typeable (a :: ak), Typeable ak, Typeable p, Typeable k)
+  => Strengthen (Refined1 (p :: k) f a) where
     strengthen = refine1 .> \case
-      Left  rex -> failShowNoVal @(f a)
+      Left  rf -> failShowNoVal @(f a)
         [ "refinement: "<>tshow (typeRep' @p)
         , "failed with..."
-        , tshow (displayRefineException rex)
+        , prettyRefineFailure rf
         ]
-      Right ra  -> Success ra
+      Right ra -> Success ra
 
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
 instance Typeable a => Strengthen (NonEmpty a) where
