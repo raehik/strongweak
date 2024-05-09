@@ -18,9 +18,8 @@ import Data.Either.Validation
 import GHC.Generics
 import Data.Kind
 import GHC.TypeNats
-import GHC.Exts ( proxy#, Proxy# )
-
-import Control.Applicative ( liftA2 ) -- required for older GHCs
+import Control.Applicative qualified as A -- liftA2 export workaround
+import Strongweak.Util.TypeNats ( natVal'' )
 
 -- | Strengthen a value generically.
 --
@@ -72,7 +71,7 @@ instance
   , GStrengthenS wcd scd wcc scc (si + ProdArity wl) wr sr
   ) => GStrengthenS wcd scd wcc scc si (wl :*: wr) (sl :*: sr) where
     gstrengthenS (l :*: r) =
-        liftA2 (:*:)
+        A.liftA2 (:*:)
                (gstrengthenS @wcd @scd @wcc @scc @si                  l)
                (gstrengthenS @wcd @scd @wcc @scc @(si + ProdArity wl) r)
 
@@ -139,9 +138,3 @@ selName' = selName @s undefined
 type family ProdArity (f :: Type -> Type) :: Natural where
     ProdArity (S1 c f)  = 1
     ProdArity (l :*: r) = ProdArity l + ProdArity r
-
---------------------------------------------------------------------------------
-
-natVal'' :: forall n. KnownNat n => Natural
-natVal'' = natVal' (proxy# :: Proxy# n)
-{-# INLINE natVal'' #-}

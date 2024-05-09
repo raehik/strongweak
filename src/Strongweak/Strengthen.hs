@@ -28,6 +28,7 @@ module Strongweak.Strengthen
 
 import Strongweak.Util.Typeable ( typeRep' )
 import Strongweak.Util.Text ( tshow )
+import Strongweak.Util.TypeNats ( natVal'' )
 import Strongweak.Weaken ( Weaken(..) )
 import Data.Either.Validation
 import Data.Typeable ( Typeable, TypeRep )
@@ -45,7 +46,7 @@ import Rerefined
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Foldable qualified as Foldable
-import Control.Applicative ( liftA2 ) -- required for older GHCs
+import Control.Applicative qualified as A -- liftA2 export workaround
 import Data.Functor.Identity
 import Data.Functor.Const
 import Acc.NeAcc
@@ -188,38 +189,43 @@ maybeFailShow detail = \case
     Just a  -> Success a
     Nothing -> failShowNoVal @(Weak a) detail
 
--- | Assert a predicate to refine a type.
-instance (Refine p a, Typeable a, Typeable p, Typeable k)
-  => Strengthen (Refined (p :: k) a) where
+maybeFail :: [Text] -> Maybe a -> Result a
+maybeFail detail = \case
+    Just a  -> Success a
+    Nothing -> fail1 $ FailOther detail
+
+-- | Strengthen a type by refining it with a predicate.
+instance Refine p a => Strengthen (Refined p a) where
     strengthen = refine .> \case
-      Left  rf -> failShowNoVal @a
-        [ "refinement: "<>tshow (typeRep' @p)
-        , "failed with..."
+      Left  rf -> fail1 $ FailOther
+        [ "refinement failure:"
         , prettyRefineFailure rf
         ]
       Right ra -> Success ra
 
--- | Assert a functor predicate to refine a type.
-instance (Refine1 p f, Typeable f, Typeable (a :: ak), Typeable ak, Typeable p, Typeable k)
-  => Strengthen (Refined1 (p :: k) f a) where
+-- | Strengthen a type by refining it with a functor predicate.
+instance Refine1 p f => Strengthen (Refined1 p f a) where
     strengthen = refine1 .> \case
-      Left  rf -> failShowNoVal @(f a)
-        [ "refinement: "<>tshow (typeRep' @p)
-        , "failed with..."
-        , prettyRefineFailure rf
-        ]
+      Left  rf -> fail1 $ FailOther
+        [ "refinement failure:"
+        , prettyRefineFailure rf ]
       Right ra -> Success ra
 
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
-instance Typeable a => Strengthen (NonEmpty a) where
-    strengthen = NonEmpty.nonEmpty .> maybeFailShow ["empty list"]
+instance Strengthen (NonEmpty a) where
+    strengthen = NonEmpty.nonEmpty .> maybeFail
+        [ "type: [a] -> NonEmpty a"
+        , "fail: empty list" ]
 
 -- | Strengthen a plain list into a sized vector by asserting length.
-instance
-  ( VG.Vector v a, KnownNat n
-  , Typeable v, Typeable a
-  ) => Strengthen (VGS.Vector v n a) where
-      strengthen = VGS.fromList .> maybeFailShow ["incorrect length"]
+instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
+    strengthen as =
+        case VGS.fromList as of
+          Just va -> Success va
+          Nothing -> fail1 $ FailOther
+            [ "type: [a] -> Vector v "<>tshow n<>" a"
+            , "fail: wrong length (got "<>tshow (length as)<>")" ]
+      where n = natVal'' @n
 
 -- | Add wrapper.
 instance Strengthen (Identity a) where
@@ -256,6 +262,7 @@ strengthenBounded
     .  ( Typeable n, Integral n, Show n
        , Typeable m, Integral m, Show m, Bounded m
        ) => n -> Result m
+-- TODO this is the last usage of FailShow remaining
 strengthenBounded n
   | n <= maxB && n >= minB = Success (fromIntegral n)
   | otherwise = failShow n
@@ -274,7 +281,7 @@ instance Strengthen a => Strengthen [a] where
 
 -- | Decomposer. Strengthen both elements of a tuple.
 instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
-    strengthen (a, b) = liftA2 (,) (strengthen a) (strengthen b)
+    strengthen (a, b) = A.liftA2 (,) (strengthen a) (strengthen b)
 
 -- | Decomposer. Strengthen either side of an 'Either'.
 instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where

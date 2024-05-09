@@ -22,3 +22,12 @@ start lol.
 The `Show`ing feels a little weird too, but I think it's just that we get away
 with it thanks to having lots of concrete instances. Non-concrete instances
 would drop it.
+
+Hmm. Not too sure how `Refined` instances will look. How do we get a `Symbol`
+from the `a` in `Refined p a`? We can say "it's some type refined with this
+predicate", but we apparently can't tell you the type.
+
+Hold on, we went with type-level show for predicates because we were doing lots
+of combination. We do no such thing here. Why don't we just write in the
+`TypeRep`s ourselves? Easy for concrete, fine for `Refined`. Apparently not a
+problem for decomposing instances either.
