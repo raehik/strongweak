@@ -11,6 +11,8 @@ handling/"unwrapping" a different layer of the generic representation: datatype
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{-# LANGUAGE OverloadedStrings #-} -- errors
+
 module Strongweak.Generic.Strengthen where
 
 import Strongweak.Strengthen
@@ -20,6 +22,25 @@ import Data.Kind
 import GHC.TypeNats
 import Control.Applicative qualified as A -- liftA2 export workaround
 import Strongweak.Util.TypeNats ( natVal'' )
+import Data.Text.Builder.Linear qualified as TBL
+import GHC.Exts ( fromString )
+
+{- TODO
+So, now that we're improving the error story, we can do so here as well.
+
+At product level in these generics, we know that neither data type names or
+constructor names (weak or strong) will change. So individual fields can simply
+annotate themselves with the weak & strong field identifiers. Then those can get
+wrapped into a nice clean error higher up, that says "this constructor had the
+following errors".
+
+It's gonna look like the tuple and list 'Strengthen' instances but worse. Lots
+of fiddly stuff.
+
+Also, we can do the data type equality check I noted earlier. If weak & strong
+data type names/constructor names match, we're probably doing @SW@ tricks, and
+could probably shorten the error a bit.
+-}
 
 -- | Strengthen a value generically.
 --
@@ -70,6 +91,7 @@ instance
   ( GStrengthenS wcd scd wcc scc si                  wl sl
   , GStrengthenS wcd scd wcc scc (si + ProdArity wl) wr sr
   ) => GStrengthenS wcd scd wcc scc si (wl :*: wr) (sl :*: sr) where
+    -- TODO ahhh this is gonna suck.
     gstrengthenS (l :*: r) =
         A.liftA2 (:*:)
                (gstrengthenS @wcd @scd @wcc @scc @si                  l)
@@ -89,17 +111,21 @@ instance {-# OVERLAPS #-}
   , KnownNat si
   ) => GStrengthenS wcd scd wcc scc si (S1 wcs (Rec0 w)) (S1 scs (Rec0 s)) where
     gstrengthenS = unM1 .> unK1 .> strengthen .> \case
-      Success s  -> Success $ M1 $ K1 s
-      Failure es -> Failure $ pure e
+      Success s -> Success $ M1 $ K1 s
+      Failure e -> failStrengthen [selQN] [(mempty, e)]
         where
-          e = FailField wcd scd wcc scc si wcs si scs es
+          -- TODO only using weak!! should inspect, only shorten if identical
+          --e = FailField wcd scd wcc scc si wcs si scs es
+          selQN = fromString wcd<>"."<>fromString wcc<>"."<>sw
           wcd = datatypeName' @wcd
           scd = datatypeName' @scd
           wcc = conName' @wcc
           scc = conName' @scc
-          wcs = selName'' @wcs
           scs = selName'' @scs
-          si = natVal'' @si
+          -- TODO can't fromDec Naturals >:((
+          sw = maybe (fromString (show (natVal'' @si))) fromString
+                   (selName'' @wcs)
+
 
 --------------------------------------------------------------------------------
 

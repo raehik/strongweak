@@ -60,6 +60,7 @@ dependencies:
 - acc ^>= 0.2.0.1
 - text >= 1.2.5.0 && <2.1
 - prettyprinter ^>= 1.7.1
+- text-builder-linear ^>= 0.1.2
 
 # instances
 - rerefined ^>= 0.3.0

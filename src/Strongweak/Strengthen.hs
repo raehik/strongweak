@@ -12,49 +12,37 @@ module Strongweak.Strengthen
   , strengthenBounded
 
   -- * Strengthen failures
-  , Fails
-  , Fail(..)
-  , prettyFail
-
-  -- ** Helpers
-  , fail1
-  , failOther
-  , failShow
-  , maybeFailShow
+  , StrengthenFailure(..)
+  , failStrengthen1
+  , failStrengthen
 
   -- * Re-exports
   , Strongweak.Weaken.Weak
   ) where
 
 import Strongweak.Util.Typeable ( typeRep' )
-import Strongweak.Util.Text ( tshow )
 import Strongweak.Util.TypeNats ( natVal'' )
 import Strongweak.Weaken ( Weaken(..) )
 import Data.Either.Validation
-import Data.Typeable ( Typeable, TypeRep )
-import Prettyprinter qualified as Pretty
-import Prettyprinter ( Pretty(pretty), (<+>) )
-import Prettyprinter.Render.String qualified as Pretty
-import Prettyprinter.Render.Text qualified as Pretty
+import Data.Typeable ( Typeable )
 
-import Data.Text ( Text )
-import Data.Text.Lazy qualified as Text.Lazy
-import GHC.TypeNats ( Natural, KnownNat )
+import GHC.TypeNats ( KnownNat )
 import Data.Word
 import Data.Int
 import Rerefined
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
-import Data.Foldable qualified as Foldable
-import Control.Applicative qualified as A -- liftA2 export workaround
 import Data.Functor.Identity
 import Data.Functor.Const
-import Acc.NeAcc
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 
-type Result = Validation Fails
-type Fails = NeAcc Fail
+import Data.Text.Builder.Linear qualified as TBL
+import GHC.Exts ( fromString )
+
+import Data.Bits ( FiniteBits )
+
+type Result = Validation StrengthenFailure
 
 {- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
@@ -85,155 +73,68 @@ restrengthen
 restrengthen = strengthen . weaken
 
 -- | A failure encountered during strengthening.
-data Fail
-  -- | A failure containing lots of detail. Use in concrete instances where you
-  --   already have the 'Show's and 'Typeable's needed.
-  = FailShow
-        TypeRep -- ^ weak   type
-        TypeRep -- ^ strong type
-        (Maybe Text) -- ^ weak value
-        [Text] -- ^ failure description
-
-  -- | A failure. Use in abstract instances to avoid heavy contexts. (Remember
-  --   that generic strengtheners should wrap these nicely anyway!)
-  | FailOther
-        [Text] -- ^ failure description
-
-  -- | Some failures occurred when strengthening from one data type to another.
+data StrengthenFailure = StrengthenFailure
+  { strengthenFailDetail :: [TBL.Builder]
+  -- ^ Detail on strengthen failure.
   --
-  -- Field indices are from 0 in the respective constructor. Field names are
-  -- provided if are present in the type.
-  --
-  -- This is primarily intended to be used by generic strengtheners.
-  | FailField
-        String                      -- ^ weak   datatype name
-        String                      -- ^ strong datatype name
-        String                      -- ^ weak   constructor name
-        String                      -- ^ strong constructor name
-        Natural                     -- ^ weak   field index
-        (Maybe String)              -- ^ weak   field name (if present)
-        Natural                     -- ^ strong field index
-        (Maybe String)              -- ^ strong field name (if present)
-        Fails                       -- ^ failures
+  -- We use a list here to keep us able to prettify. We could simply concatenate
+  -- each element with a newline, but pretty layouts might want to apply an
+  -- indent, so better handle it elsewhere.
 
-prettyFail :: Fail -> Text.Lazy.Text
-prettyFail = Pretty.renderLazy . prettyLayoutFail
+  , strengthenFailInner  :: [(TBL.Builder, StrengthenFailure)]
+  -- ^ Indexed.
+  } deriving stock Show
 
-prettyLayoutFail :: Fail -> Pretty.SimpleDocStream ann
-prettyLayoutFail = Pretty.layoutPretty Pretty.defaultLayoutOptions . pretty
+failStrengthen
+    :: [TBL.Builder] -> [(TBL.Builder, StrengthenFailure)] -> Result a
+failStrengthen t fs = Failure $ StrengthenFailure t fs
 
-fail1 :: Fail -> Result a
-fail1 = Failure . pure
-
-failOther :: [Text] -> Result a
-failOther = fail1 . FailOther
-
-buildFailShow
-    :: forall w s. (Typeable w, Typeable s)
-    => Maybe Text -> [Text] -> Result s
-buildFailShow mwv = fail1 . FailShow (typeRep' @w) (typeRep' @s) mwv
-
-failShow'
-    :: forall s w. (Typeable w, Show w, Typeable s)
-    => (w -> Text) -> w -> [Text] -> Result s
-failShow' f w = buildFailShow @w @s (Just (f w))
-
-failShow
-    :: forall s w. (Typeable w, Show w, Typeable s)
-    => w -> [Text] -> Result s
-failShow = failShow' tshow
-
--- | This reports the weak and strong type, so no need to include those in the
---   failure detail.
-failShowNoVal :: forall w s. (Typeable w, Typeable s) => [Text] -> Result s
-failShowNoVal = buildFailShow @w @s Nothing
-
-instance Show Fail where
-    showsPrec _ = Pretty.renderShowS . prettyLayoutFail
-
--- TODO shorten value if over e.g. 50 chars. e.g. @[0,1,2,...,255] -> FAIL@
-instance Pretty Fail where
-    pretty = \case
-      FailShow wt st mwv detail -> Pretty.vsep $
-        case mwv of
-          Nothing -> [typeDoc, detailDoc]
-          Just wv ->
-            let valueDoc = "value: "<+>pretty wv<+>"->"<+>"FAIL"
-            in  [typeDoc, valueDoc, detailDoc]
-        where
-          typeDoc   = "type:  "<+>prettyTypeRep wt<+>"->"<+>prettyTypeRep st
-          detailDoc = case detail of
-            []           -> "<no detail>"
-            [detailLine] -> "detail:"<+>pretty detailLine
-            _            -> "detail:"<>Pretty.line<>prettyList detail
-
-      FailOther detail -> pretty detail
-
-      -- TODO should inspect meta, shorten if identical (currently only using
-      -- weak)
-      FailField dw _ds cw _cs iw fw _is _fs es ->
-        let sw = maybe (show iw) id fw
-        in  Pretty.nest 0 $ pretty dw<>"."<>pretty cw<>"."<>pretty sw<>Pretty.line<>prettyList es
-
--- mutually recursive with its 'Pretty' instance. safe, but a bit confusing -
--- clean up
-prettyList :: (Foldable f, Pretty a) => f a -> Pretty.Doc ann
-prettyList = Pretty.vsep . map go . Foldable.toList
-  where go e = "-"<+>Pretty.indent 0 (pretty e)
-
--- | Succeed on 'Just', fail with given detail on 'Nothing'.
-maybeFailShow
-    :: forall a. (Typeable (Weak a), Typeable a)
-    => [Text] -> Maybe a -> Result a
-maybeFailShow detail = \case
-    Just a  -> Success a
-    Nothing -> failShowNoVal @(Weak a) detail
-
-maybeFail :: [Text] -> Maybe a -> Result a
-maybeFail detail = \case
-    Just a  -> Success a
-    Nothing -> fail1 $ FailOther detail
+failStrengthen1 :: [TBL.Builder] -> Result a
+failStrengthen1 t = failStrengthen t []
 
 -- | Strengthen a type by refining it with a predicate.
 instance Refine p a => Strengthen (Refined p a) where
     strengthen = refine .> \case
-      Left  rf -> fail1 $ FailOther
-        [ "refinement failure:"
-        , prettyRefineFailure rf
-        ]
       Right ra -> Success ra
+      Left  rf -> failStrengthen1
+        [ "refinement failure:"
+        , TBL.fromText (prettyRefineFailure rf) ]
+        -- ^ TODO rerefined: provide a TBL pretty function
 
 -- | Strengthen a type by refining it with a functor predicate.
 instance Refine1 p f => Strengthen (Refined1 p f a) where
     strengthen = refine1 .> \case
-      Left  rf -> fail1 $ FailOther
-        [ "refinement failure:"
-        , prettyRefineFailure rf ]
       Right ra -> Success ra
+      Left  rf -> failStrengthen1
+        [ "refinement failure:"
+        , TBL.fromText (prettyRefineFailure rf) ]
 
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
 instance Strengthen (NonEmpty a) where
-    strengthen = NonEmpty.nonEmpty .> maybeFail
+    strengthen = NonEmpty.nonEmpty .> \case
+      Just neas -> Success neas
+      Nothing   -> failStrengthen1 $
         [ "type: [a] -> NonEmpty a"
         , "fail: empty list" ]
 
 -- | Strengthen a plain list into a sized vector by asserting length.
 instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
+    -- TODO another case of TBL not supporting unbounded integrals
     strengthen as =
         case VGS.fromList as of
           Just va -> Success va
-          Nothing -> fail1 $ FailOther
-            [ "type: [a] -> Vector v "<>tshow n<>" a"
-            , "fail: wrong length (got "<>tshow (length as)<>")" ]
+          Nothing -> failStrengthen1 $
+            [ "type: [a] -> Vector v "<>fromString (show n)<>" a"
+            , "fail: wrong length (got "<>TBL.fromDec (length as)<>")" ]
       where n = natVal'' @n
 
 -- | Add wrapper.
 instance Strengthen (Identity a) where
-    strengthen = pure <$> Identity
+    strengthen = Success . Identity
 
 -- | Add wrapper.
 instance Strengthen (Const a b) where
-    strengthen = pure <$> Const
+    strengthen = Success . Const
 
 {- TODO controversial. seems logical, but also kinda annoying.
 instance (Show a, Typeable a) => Strengthen (Maybe a) where
@@ -257,31 +158,67 @@ instance Strengthen Int64  where strengthen = strengthenBounded
 -- | Strengthen one numeric type into another.
 --
 -- @n@ must be "wider" than @m@.
+--
+-- @'FiniteBits' m@ and @'Show' n@ are for error printing. We're forced to
+-- @'Show' n@ because linear-text-builder can't print unbounded integrals. PR:
+-- https://github.com/Bodigrim/linear-builder/pull/20
 strengthenBounded
     :: forall m n
     .  ( Typeable n, Integral n, Show n
-       , Typeable m, Integral m, Show m, Bounded m
+       , Typeable m, Integral m, Bounded m, FiniteBits m
        ) => n -> Result m
--- TODO this is the last usage of FailShow remaining
 strengthenBounded n
-  | n <= maxB && n >= minB = Success (fromIntegral n)
-  | otherwise = failShow n
-        [ "not well bounded, require: "
-          <>tshow minB<>" <= n <= "<>tshow maxB
+  | n <= maxBn && n >= minBn = Success (fromIntegral n)
+  | otherwise = failStrengthen1
+        [ "numeric strengthen: "<>fromString (show (typeRep' @n))
+          <>" -> "<>fromString (show (typeRep' @m))
+        , "bounds check does not hold: "
+          <>TBL.fromDec minBm<>" <= "<>fromString (show n)
+          <>" <= "<>TBL.fromDec maxBm
         ]
   where
-    maxB = fromIntegral @m @n maxBound
-    minB = fromIntegral @m @n minBound
+    maxBn = fromIntegral @m @n maxBm
+    minBn = fromIntegral @m @n minBm
+    maxBm = maxBound @m
+    minBm = minBound @m
 
 --------------------------------------------------------------------------------
 
 -- | Decomposer. Strengthen every element in a list.
 instance Strengthen a => Strengthen [a] where
-    strengthen = traverse strengthen
+    strengthen = strengthenList
+
+strengthenList :: Strengthen a => [Weak a] -> Result [a]
+strengthenList = goR (0 :: Int) [] . map strengthen
+  where
+    goR i as = \case
+      r:rs ->
+        case r of
+          Success a -> goR (i+1) (a:as) rs
+          Failure e -> goL (i+1) [(TBL.fromDec i, e)]    rs
+      []   -> Success as
+    goL i es = \case
+      r:rs ->
+        case r of
+          Success _ -> goL (i+1) es                      rs
+          Failure e -> goL (i+1) ((TBL.fromDec i, e):es) rs
+      []   -> failStrengthen ["list had failures"] es
 
 -- | Decomposer. Strengthen both elements of a tuple.
-instance (Strengthen a, Strengthen b) => Strengthen (a, b) where
-    strengthen (a, b) = A.liftA2 (,) (strengthen a) (strengthen b)
+instance (Strengthen l, Strengthen r) => Strengthen (l, r) where
+    strengthen (l, r) =
+        case strengthen l of
+          Success sl ->
+            case strengthen r of
+              Success sr -> Success (sl, sr)
+              Failure er -> failStrengthen ["2-tuple: right failed"]
+                [("R", er)]
+          Failure el ->
+            case strengthen @r r of
+              Success _  -> failStrengthen ["2-tuple:  left failed"]
+                [("L", el)]
+              Failure er -> failStrengthen ["2-tuple:   l&r failed"]
+                [("R", er), ("L", el)]
 
 -- | Decomposer. Strengthen either side of an 'Either'.
 instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
@@ -289,9 +226,6 @@ instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
                        Right b -> Right <$> strengthen b
 
 --------------------------------------------------------------------------------
-
-prettyTypeRep :: TypeRep -> Pretty.Doc a
-prettyTypeRep = pretty . show
 
 -- from flow
 (.>) :: (a -> b) -> (b -> c) -> a -> c

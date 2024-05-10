@@ -2,6 +2,10 @@
 * split into base definitions and orphan instances?
   * base needs either, acc, text and prettyprinter
 
+## Failures: Combine it all into one constructor
+Same as rerefined, no need to split. It means I have to make earlier decisions
+on layout, but that's fine.
+
 ## Failures: is Typeable really the right choice?
 I probably went with `TypeRep`s for filling out failure detail due to copying
 refined's design. With rerefined, I've gone back on that, and I now
