@@ -64,11 +64,11 @@
     "rerefined": {
       "flake": false,
       "locked": {
-        "lastModified": 1715132473,
-        "narHash": "sha256-bWG2A8DJhYQ6ocOheLnN7umauZwbIfAbqdQkSsIxto0=",
+        "lastModified": 1715428908,
+        "narHash": "sha256-sjG09y2Gr/HbkIob3bqk5+7QpbogqPLp3UV77vbOPDk=",
         "owner": "raehik",
         "repo": "rerefined",
-        "rev": "3b8ef08d78552df46c096166629ae0090acee9be",
+        "rev": "0c62d89c0a394fd26d85fe32241f6c246c315509",
         "type": "github"
       },
       "original": {

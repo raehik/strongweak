@@ -3,7 +3,7 @@ module Strongweak.Strengthen.Unsafe where
 import Strongweak.Weaken
 import Data.Word
 import Data.Int
-import Rerefined.Refine.Unsafe
+import Rerefined.Refine
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Vector.Generic.Sized.Internal qualified

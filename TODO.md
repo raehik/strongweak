@@ -2,36 +2,24 @@
 * split into base definitions and orphan instances?
   * base needs either, acc, text and prettyprinter
 
-## Failures: Combine it all into one constructor
-Same as rerefined, no need to split. It means I have to make earlier decisions
-on layout, but that's fine.
+## Failures: Pretty refinement failures require exposing `Doc` early
+rerefined refinement failures return an ADT, which is something. But we can't
+embed that directly in a strengthen failure. We have to prettify to some degree.
+But that will force us to perform all the indentation etc. upfront, which is
+what we're trying to avoid (since it won't work properly).
 
-## Failures: is Typeable really the right choice?
-I probably went with `TypeRep`s for filling out failure detail due to copying
-refined's design. With rerefined, I've gone back on that, and I now
-don't use `Typeable` at all. That said, is it the right pick here?
+Is this even sensible? When a strengthen failure indents, it has semantic
+meaning: in this general failure, a more specific failure occurred. Using the
+indent also for "in this specific failure, a refinement error occurred" seems
+bad, somehow.
 
-* The generics don't use it at all.
-* Concrete instances could use an associated type family like `type Name =
-  "Word32"`.
-  * And strongweak largely deals in concrete instances.
-* We can do the same type-level `Show` stuff that rerefined does.
-  * And we can embed `PredicateName` for `Refined[1]` instances.
+We _could_ fix this by going back on our new design, and making a failure
+constructor specifically for refinement failures. But that seems like a big code
+smell.
 
-The user will have to fill out a bunch of associated type families when using
-strongweak, which sucks. Or maybe we can do a shitty job automatically for
-generics? Like we can get the datatype name-- no other info, but that's a good
-start lol.
+Alternatively, we store `Doc`s instead of `Builder`s. Then we can layout in the
+`Strengthen Refined` instance. But that seems wrong, too.
 
-The `Show`ing feels a little weird too, but I think it's just that we get away
-with it thanks to having lots of concrete instances. Non-concrete instances
-would drop it.
-
-Hmm. Not too sure how `Refined` instances will look. How do we get a `Symbol`
-from the `a` in `Refined p a`? We can say "it's some type refined with this
-predicate", but we apparently can't tell you the type.
-
-Hold on, we went with type-level show for predicates because we were doing lots
-of combination. We do no such thing here. Why don't we just write in the
-`TypeRep`s ourselves? Easy for concrete, fine for `Refined`. Apparently not a
-problem for decomposing instances either.
+Orrrr I know it's stupid, but we could have a `prettyRefineFailure :: E ->
+[TBL.Builder]`, where the indents are prepared for us. Then we can add our own
+base indent on top. No issue. OK, I guess we stick with the current setup.

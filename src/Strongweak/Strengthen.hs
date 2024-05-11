@@ -77,9 +77,8 @@ data StrengthenFailure = StrengthenFailure
   { strengthenFailDetail :: [TBL.Builder]
   -- ^ Detail on strengthen failure.
   --
-  -- We use a list here to keep us able to prettify. We could simply concatenate
-  -- each element with a newline, but pretty layouts might want to apply an
-  -- indent, so better handle it elsewhere.
+  -- We use a list here for the cases where you want multiple lines of detail.
+  -- Separating with a newline would make prettifying later harder, so we delay.
 
   , strengthenFailInner  :: [(TBL.Builder, StrengthenFailure)]
   -- ^ Indexed.

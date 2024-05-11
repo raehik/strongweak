@@ -100,7 +100,6 @@ handling receives special attention:
 
   * Failures do not short-circuit; if a strengthening is made up of multiple
     smaller strengthenings, all are run and any failures collated.
-  * Failures display the weak and strong (target) type.
   * Generic strengthening is scarily verbose: see below for details.
 
 ### One definition, strong + weak views

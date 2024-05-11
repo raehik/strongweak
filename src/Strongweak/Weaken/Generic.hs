@@ -1,9 +1,8 @@
 -- | 'weaken' over generic representations.
 
-module Strongweak.Generic.Weaken where
+module Strongweak.Weaken.Generic where
 
 import Strongweak.Weaken
-
 import GHC.Generics
 
 -- | Weaken a value generically.
@@ -29,11 +28,11 @@ instance GWeaken U1 U1 where
     gweaken = id
 
 -- | Special case: if source and target types are equal, copy the value through.
-instance GWeaken (Rec0 s) (Rec0 s) where
+instance {-# OVERLAPPING #-} GWeaken (Rec0 s) (Rec0 s) where
     gweaken = id
 
 -- | Weaken a field using the existing 'Weaken' instance.
-instance {-# OVERLAPS #-} (Weaken s, Weak s ~ w) => GWeaken (Rec0 s) (Rec0 w) where
+instance (Weaken s, Weak s ~ w) => GWeaken (Rec0 s) (Rec0 w) where
     gweaken = K1 . weaken . unK1
 
 -- | Weaken product types by weakening left and right.

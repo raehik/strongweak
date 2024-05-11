@@ -30,15 +30,14 @@ library
   exposed-modules:
       Strongweak
       Strongweak.Generic
-      Strongweak.Generic.Strengthen
-      Strongweak.Generic.Via
-      Strongweak.Generic.Weaken
       Strongweak.Strengthen
+      Strongweak.Strengthen.Generic
       Strongweak.Strengthen.Unsafe
       Strongweak.Util.Text
       Strongweak.Util.Typeable
       Strongweak.Util.TypeNats
       Strongweak.Weaken
+      Strongweak.Weaken.Generic
   other-modules:
       Paths_strongweak
   hs-source-dirs:
