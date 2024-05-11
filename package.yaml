@@ -1,5 +1,5 @@
 name: strongweak
-version: 0.6.1
+version: 0.7.0
 synopsis: Convert between strong and weak representations of types
 description: Please see README.md.
 extra-source-files:
@@ -59,7 +59,7 @@ ghc-options:
 
 # `pkg ^>= x.y.z` means `pkg >= x.y.z && < x.(y+1)
 dependencies:
-- base >= 4.14 && < 5
+- base >= 4.17 && < 5
 
 # strengthening
 - either ^>= 5.0.1.1 # for Validation

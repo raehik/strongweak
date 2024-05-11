@@ -50,12 +50,6 @@
           packages.type-level-show.source = inputs.type-level-show;
           devShell = nondevDevShell "ghc94";
         };
-        haskellProjects.ghc92 = {
-          basePackages = pkgs.haskell.packages.ghc92;
-          packages.rerefined.source = inputs.rerefined;
-          packages.type-level-show.source = inputs.type-level-show;
-          devShell = nondevDevShell "ghc92";
-        };
       };
     };
 }

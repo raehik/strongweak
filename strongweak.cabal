@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           strongweak
-version:        0.6.1
+version:        0.7.0
 synopsis:       Convert between strong and weak representations of types
 description:    Please see README.md.
 category:       Data
@@ -56,7 +56,7 @@ library
       MagicHash
   ghc-options: -Wall -Wno-unticked-promoted-constructors
   build-depends:
-      base >=4.14 && <5
+      base >=4.17 && <5
     , either >=5.0.1.1 && <5.1
     , rerefined >=0.4.0 && <0.5
     , text >=1.2.5.0 && <2.2
@@ -90,7 +90,7 @@ test-suite spec
       hspec-discover:hspec-discover >=2.7 && <2.12
   build-depends:
       QuickCheck >=2.14.2 && <2.16
-    , base >=4.14 && <5
+    , base >=4.17 && <5
     , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
     , hspec >=2.7 && <2.12
