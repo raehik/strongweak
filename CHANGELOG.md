@@ -1,3 +1,7 @@
+## Unreleased
+* replaced refined1 with rerefined
+* simplify failures
+
 ## 0.6.1 (2024-04-03)
   * tests: relax hspec upper bound
 

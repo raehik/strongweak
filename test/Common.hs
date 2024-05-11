@@ -6,7 +6,7 @@ import Strongweak.Generic
 import Rerefined
 import Rerefined.Predicates
 import GHC.Generics ( Generic )
-import Generic.Random
+import Generic.Random ( GenericArbitraryU(..), AndShrinking(..) )
 import Test.QuickCheck ( Arbitrary )
 import Numeric.Natural ( Natural )
 import Data.Word

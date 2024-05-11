@@ -17,7 +17,8 @@ license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    GHC ==9.2.2
+    GHC==9.8
+  , GHC==9.6
 extra-source-files:
     README.md
     CHANGELOG.md
@@ -53,14 +54,12 @@ library
       TypeFamilies
       DataKinds
       MagicHash
-  ghc-options: -Wall
+  ghc-options: -Wall -Wno-unticked-promoted-constructors
   build-depends:
-      acc >=0.2.0.1 && <0.3
-    , base >=4.14 && <5
+      base >=4.14 && <5
     , either >=5.0.1.1 && <5.1
-    , prettyprinter >=1.7.1 && <1.8
-    , rerefined >=0.3.0 && <0.4
-    , text >=1.2.5.0 && <2.1
+    , rerefined >=0.4.0 && <0.5
+    , text >=1.2.5.0 && <2.2
     , text-builder-linear >=0.1.2 && <0.2
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6
@@ -72,7 +71,6 @@ test-suite spec
   other-modules:
       Common
       Strongweak.LawsSpec
-      Strongweak.StrengthenSpec
       Paths_strongweak
   hs-source-dirs:
       test
@@ -87,21 +85,19 @@ test-suite spec
       TypeFamilies
       DataKinds
       MagicHash
-  ghc-options: -Wall
+  ghc-options: -Wall -Wno-unticked-promoted-constructors
   build-tool-depends:
       hspec-discover:hspec-discover >=2.7 && <2.12
   build-depends:
-      QuickCheck >=2.14.2 && <2.15
-    , acc >=0.2.0.1 && <0.3
+      QuickCheck >=2.14.2 && <2.16
     , base >=4.14 && <5
     , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
     , hspec >=2.7 && <2.12
-    , prettyprinter >=1.7.1 && <1.8
     , quickcheck-instances >=0.3.26 && <0.4
-    , rerefined >=0.3.0 && <0.4
+    , rerefined >=0.4.0 && <0.5
     , strongweak
-    , text >=1.2.5.0 && <2.1
+    , text >=1.2.5.0 && <2.2
     , text-builder-linear >=0.1.2 && <0.2
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.6

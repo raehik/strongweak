@@ -6,7 +6,9 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 category: Data
-tested-with: GHC ==9.2.2
+tested-with:
+- GHC==9.8
+- GHC==9.6
 license: MIT
 license-file: LICENSE
 
@@ -51,19 +53,21 @@ default-extensions:
 ghc-options:
 - -Wall
 
+# omitting ticks is good; see https://gitlab.haskell.org/ghc/ghc/-/issues/20531
+# (off by default since GHC 9.4)
+- -Wno-unticked-promoted-constructors
+
 # `pkg ^>= x.y.z` means `pkg >= x.y.z && < x.(y+1)
 dependencies:
 - base >= 4.14 && < 5
 
 # strengthening
-- either ^>= 5.0.1.1
-- acc ^>= 0.2.0.1
-- text >= 1.2.5.0 && <2.1
-- prettyprinter ^>= 1.7.1
+- either ^>= 5.0.1.1 # for Validation
+- text >= 1.2.5.0 && <2.2
 - text-builder-linear ^>= 0.1.2
 
 # instances
-- rerefined ^>= 0.3.0
+- rerefined ^>= 0.4.0
 - vector-sized ^>= 1.5.0
 - vector >= 0.12.3.1 && < 0.14
 
@@ -79,6 +83,6 @@ tests:
     dependencies:
     - strongweak
     - hspec >= 2.7 && < 2.12
-    - QuickCheck ^>= 2.14.2
+    - QuickCheck >= 2.14.2 && < 2.16
     - quickcheck-instances ^>= 0.3.26
     - generic-random ^>= 1.5.0.1

@@ -1,6 +1,7 @@
 # strongweak to-dos
 * split into base definitions and orphan instances?
   * base needs either, acc, text and prettyprinter
+* deleted generic failure tests because clumsy. kinda sad but idk :(
 
 ## Failures: Pretty refinement failures require exposing `Doc` early
 rerefined refinement failures return an ADT, which is something. But we can't
