@@ -59,7 +59,7 @@ ghc-options:
 
 # `pkg ^>= x.y.z` means `pkg >= x.y.z && < x.(y+1)
 dependencies:
-- base >= 4.17 && < 5
+- base >= 4.18 && < 5
 
 # strengthening
 - either ^>= 5.0.1.1 # for Validation
@@ -67,7 +67,7 @@ dependencies:
 - text-builder-linear ^>= 0.1.2
 
 # instances
-- rerefined ^>= 0.4.0
+- rerefined ^>= 0.5.0
 - vector-sized ^>= 1.5.0
 - vector >= 0.12.3.1 && < 0.14
 

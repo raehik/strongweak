@@ -12,6 +12,8 @@
     rerefined.flake = false;
     type-level-show.url   = "github:raehik/type-level-show";
     type-level-show.flake = false;
+    singleraeh.url   = "github:raehik/singleraeh";
+    singleraeh.flake = false;
   };
   outputs = inputs:
   let
@@ -36,18 +38,21 @@
           basePackages = pkgs.haskell.packages.ghc98;
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
+          packages.singleraeh.source = inputs.singleraeh;
           devShell = nondevDevShell "ghc98";
         };
         haskellProjects.ghc96 = {
           basePackages = pkgs.haskell.packages.ghc96;
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
+          packages.singleraeh.source = inputs.singleraeh;
           devShell.mkShellArgs.name = "ghc96-strongweak";
         };
         haskellProjects.ghc94 = {
           basePackages = pkgs.haskell.packages.ghc94;
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
+          packages.singleraeh.source = inputs.singleraeh;
           devShell = nondevDevShell "ghc94";
         };
       };
