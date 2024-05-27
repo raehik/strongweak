@@ -1,3 +1,6 @@
+## 0.7.1 (2024-05-27)
+* bump meta/dependencies
+
 ## 0.7.0 (2024-05-11)
 * replaced refined1 with rerefined
 * simplify failures
