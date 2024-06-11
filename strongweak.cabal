@@ -34,8 +34,6 @@ library
       Strongweak.Strengthen
       Strongweak.Strengthen.Generic
       Strongweak.Strengthen.Unsafe
-      Strongweak.Util.Text
-      Strongweak.Util.Typeable
       Strongweak.Util.TypeNats
       Strongweak.Weaken
       Strongweak.Weaken.Generic

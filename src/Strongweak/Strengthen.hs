@@ -20,10 +20,8 @@ module Strongweak.Strengthen
   , Strongweak.Weaken.Weak
   ) where
 
-import Strongweak.Util.Typeable ( typeRep' )
 import Strongweak.Util.TypeNats ( natVal'' )
 import Strongweak.Weaken ( Weaken(..) )
-import Data.Typeable ( Typeable )
 
 import GHC.TypeNats ( KnownNat )
 import Data.Word
@@ -40,6 +38,8 @@ import Data.Text.Builder.Linear qualified as TBL
 import GHC.Exts ( fromString )
 
 import Data.Bits ( FiniteBits )
+
+import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
 
 {- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
@@ -239,3 +239,6 @@ instance (Strengthen a, Strengthen b) => Strengthen (Either a b) where
 -- from flow
 (.>) :: (a -> b) -> (b -> c) -> a -> c
 f .> g = g . f
+
+typeRep' :: forall a. Typeable a => TypeRep
+typeRep' = typeRep (Proxy @a)
