@@ -6,13 +6,13 @@ module Strongweak.Strengthen
   -- * 'Strengthen' class
     Strengthen(..)
   , restrengthen
-  , Result
 
   -- ** Helpers
   , strengthenBounded
 
   -- * Strengthen failures
   , StrengthenFailure(..)
+  , StrengthenFailure'
   , failStrengthen1
   , failStrengthen
 
@@ -23,7 +23,6 @@ module Strongweak.Strengthen
 import Strongweak.Util.Typeable ( typeRep' )
 import Strongweak.Util.TypeNats ( natVal'' )
 import Strongweak.Weaken ( Weaken(..) )
-import Data.Either.Validation
 import Data.Typeable ( Typeable )
 
 import GHC.TypeNats ( KnownNat )
@@ -42,8 +41,6 @@ import GHC.Exts ( fromString )
 
 import Data.Bits ( FiniteBits )
 
-type Result = Validation StrengthenFailure
-
 {- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
 
 We take 'Weaken' as a superclass in order to maintain strong/weak type pair
@@ -57,7 +54,7 @@ See "Strongweak" for class design notes and laws.
 class Weaken a => Strengthen a where
     -- | Attempt to strengthen some @'Weak' a@ to its associated strong type
     --   @a@.
-    strengthen :: Weak a -> Result a
+    strengthen :: Weak a -> Either StrengthenFailure' a
 
 -- | Weaken a strong value, then strengthen it again.
 --
@@ -66,35 +63,48 @@ class Weaken a => Strengthen a where
 -- invariants. For example:
 --
 -- >>> restrengthen $ unsafeStrengthen @(Vector 2 Natural) [0]
--- Failure ...
-restrengthen
-    :: (Strengthen a, Weaken a)
-    => a -> Result a
+-- Left ...
+restrengthen :: (Strengthen a, Weaken a) => a -> Either StrengthenFailure' a
 restrengthen = strengthen . weaken
 
 -- | A failure encountered during strengthening.
-data StrengthenFailure = StrengthenFailure
-  { strengthenFailDetail :: [TBL.Builder]
+--
+-- Strengthening can involve multiple distinct checks. In such cases, you may
+-- record multiple failures in a single 'StrengthenFailure' by placing them in
+-- the inner failure list and noting their meaning in the detail field.
+data StrengthenFailure text = StrengthenFailure
+  { strengthenFailDetail :: [text]
   -- ^ Detail on strengthen failure.
   --
   -- We use a list here for the cases where you want multiple lines of detail.
   -- Separating with a newline would make prettifying later harder, so we delay.
+  --
+  -- Note that this should probably never be empty. TODO consider @NonEmpty@,
+  -- but fairly unimportant.
 
-  , strengthenFailInner  :: [(TBL.Builder, StrengthenFailure)]
-  -- ^ Indexed.
+  , strengthenFailInner  :: [(text, StrengthenFailure text)]
+  -- ^ Optional wrapped failures.
+  --
+  -- The @text@ type acts as an index. Its meaning depends on the failure
+  -- in question, and should be explained in 'strengthenFailDetail'.
   } deriving stock Show
 
-failStrengthen
-    :: [TBL.Builder] -> [(TBL.Builder, StrengthenFailure)] -> Result a
-failStrengthen t fs = Failure $ StrengthenFailure t fs
+type StrengthenFailure' = StrengthenFailure TBL.Builder
 
-failStrengthen1 :: [TBL.Builder] -> Result a
+-- | Shorthand for failing a strengthen.
+failStrengthen
+    :: [text] -> [(text, StrengthenFailure text)]
+    -> Either (StrengthenFailure text) a
+failStrengthen t fs = Left $ StrengthenFailure t fs
+
+-- | Shorthand for failing a strengthen with no inner failures.
+failStrengthen1 :: [text] -> Either (StrengthenFailure text) a
 failStrengthen1 t = failStrengthen t []
 
 -- | Strengthen a type by refining it with a predicate.
 instance Refine p a => Strengthen (Refined p a) where
     strengthen = refine .> \case
-      Right ra -> Success ra
+      Right ra -> Right ra
       Left  rf -> failStrengthen1
         [ "refinement failure:"
         , TBL.fromText (prettyRefineFailure rf) ]
@@ -103,7 +113,7 @@ instance Refine p a => Strengthen (Refined p a) where
 -- | Strengthen a type by refining it with a functor predicate.
 instance Refine1 p f => Strengthen (Refined1 p f a) where
     strengthen = refine1 .> \case
-      Right ra -> Success ra
+      Right ra -> Right ra
       Left  rf -> failStrengthen1
         [ "refinement failure:"
         , TBL.fromText (prettyRefineFailure rf) ]
@@ -111,7 +121,7 @@ instance Refine1 p f => Strengthen (Refined1 p f a) where
 -- | Strengthen a plain list into a non-empty list by asserting non-emptiness.
 instance Strengthen (NonEmpty a) where
     strengthen = NonEmpty.nonEmpty .> \case
-      Just neas -> Success neas
+      Just neas -> Right neas
       Nothing   -> failStrengthen1 $
         [ "type: [a] -> NonEmpty a"
         , "fail: empty list" ]
@@ -121,7 +131,7 @@ instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
     -- TODO another case of TBL not supporting unbounded integrals
     strengthen as =
         case VGS.fromList as of
-          Just va -> Success va
+          Just va -> Right va
           Nothing -> failStrengthen1 $
             [ "type: [a] -> Vector v "<>fromString (show n)<>" a"
             , "fail: wrong length (got "<>TBL.fromDec (length as)<>")" ]
@@ -129,11 +139,11 @@ instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
 
 -- | Add wrapper.
 instance Strengthen (Identity a) where
-    strengthen = Success . Identity
+    strengthen = Right . Identity
 
 -- | Add wrapper.
 instance Strengthen (Const a b) where
-    strengthen = Success . Const
+    strengthen = Right . Const
 
 {- TODO controversial. seems logical, but also kinda annoying.
 instance (Show a, Typeable a) => Strengthen (Maybe a) where
@@ -165,9 +175,9 @@ strengthenBounded
     :: forall m n
     .  ( Typeable n, Integral n, Show n
        , Typeable m, Integral m, Bounded m, FiniteBits m
-       ) => n -> Result m
+       ) => n -> Either StrengthenFailure' m
 strengthenBounded n
-  | n <= maxBn && n >= minBn = Success (fromIntegral n)
+  | n <= maxBn && n >= minBn = Right (fromIntegral n)
   | otherwise = failStrengthen1
         [ "numeric strengthen: "<>fromString (show (typeRep' @n))
           <>" -> "<>fromString (show (typeRep' @m))
@@ -187,36 +197,36 @@ strengthenBounded n
 instance Strengthen a => Strengthen [a] where
     strengthen = strengthenList
 
-strengthenList :: Strengthen a => [Weak a] -> Result [a]
+strengthenList :: Strengthen a => [Weak a] -> Either StrengthenFailure' [a]
 strengthenList = goR (0 :: Int) [] . map strengthen
   where
     goR i as = \case
       r:rs ->
         case r of
-          Success a -> goR (i+1) (a:as) rs
-          Failure e -> goL (i+1) [(TBL.fromDec i, e)]    rs
-      []   -> Success as
+          Right a -> goR (i+1) (a:as) rs
+          Left  e -> goL (i+1) [(TBL.fromDec i, e)]    rs
+      []   -> Right as
     goL i es = \case
       r:rs ->
         case r of
-          Success _ -> goL (i+1) es                      rs
-          Failure e -> goL (i+1) ((TBL.fromDec i, e):es) rs
+          Right _ -> goL (i+1) es                      rs
+          Left  e -> goL (i+1) ((TBL.fromDec i, e):es) rs
       []   -> failStrengthen ["list had failures"] es
 
 -- | Decomposer. Strengthen both elements of a tuple.
 instance (Strengthen l, Strengthen r) => Strengthen (l, r) where
     strengthen (l, r) =
         case strengthen l of
-          Success sl ->
+          Right sl ->
             case strengthen r of
-              Success sr -> Success (sl, sr)
-              Failure er -> failStrengthen ["2-tuple: right failed"]
+              Right sr -> Right (sl, sr)
+              Left  er -> failStrengthen ["2-tuple: right failed"]
                 [("R", er)]
-          Failure el ->
+          Left  el ->
             case strengthen @r r of
-              Success _  -> failStrengthen ["2-tuple:  left failed"]
+              Right _  -> failStrengthen ["2-tuple:  left failed"]
                 [("L", el)]
-              Failure er -> failStrengthen ["2-tuple:   l&r failed"]
+              Left  er -> failStrengthen ["2-tuple:   l&r failed"]
                 [("R", er), ("L", el)]
 
 -- | Decomposer. Strengthen either side of an 'Either'.

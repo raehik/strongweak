@@ -17,33 +17,15 @@ information describing where the failure occurred:
 
 module Strongweak.Strengthen.Generic where
 
+import Data.Kind ( type Constraint )
 import Strongweak.Strengthen
 import GHC.Generics
-import Data.Either.Validation
 import Data.Kind ( Type )
 import GHC.TypeNats ( Natural, type (+), KnownNat )
-import Control.Applicative qualified as A -- liftA2 export workaround
 import Strongweak.Util.TypeNats ( natVal'' )
 import Data.Text.Builder.Linear qualified as TBL
 import GHC.Exts ( Symbol, fromString, proxy# )
 import GHC.TypeLits ( KnownSymbol, symbolVal' )
-
-{- TODO
-So, now that we're improving the error story, we can do so here as well.
-
-At product level in these generics, we know that neither data type names or
-constructor names (weak or strong) will change. So individual fields can simply
-annotate themselves with the weak & strong field identifiers. Then those can get
-wrapped into a nice clean error higher up, that says "this constructor had the
-following errors".
-
-It's gonna look like the tuple and list 'Strengthen' instances but worse. Lots
-of fiddly stuff.
-
-Also, we can do the data type equality check I noted earlier. If weak & strong
-data type names/constructor names match, we're probably doing @SW@ tricks, and
-could probably shorten the error a bit.
--}
 
 -- | Strengthen a value generically.
 --
@@ -51,12 +33,12 @@ could probably shorten the error a bit.
 -- the definition of compatibility in this context.
 strengthenGeneric
     :: (Generic w, Generic s, GStrengthenD (Rep w) (Rep s))
-    => w -> Result s
+    => w -> Either StrengthenFailure' s
 strengthenGeneric = fmap to . gstrengthenD . from
 
 -- | Generic strengthening at the datatype level.
 class GStrengthenD w s where
-    gstrengthenD :: w p -> Result (s p)
+    gstrengthenD :: w p -> Either StrengthenFailure' (s p)
 
 -- | Strengthen a generic data type, replacing its metadata wrapping.
 instance GStrengthenC wdn sdn w s
@@ -67,10 +49,10 @@ instance GStrengthenC wdn sdn w s
 
 -- | Generic strengthening at the constructor sum level.
 class GStrengthenC (wdn :: Symbol) (sdn :: Symbol) w s where
-    gstrengthenC :: w p -> Result (s p)
+    gstrengthenC :: w p -> Either StrengthenFailure' (s p)
 
 -- | Nothing to do for empty datatypes.
-instance GStrengthenC wdn sdn V1 V1 where gstrengthenC = Success
+instance GStrengthenC wdn sdn V1 V1 where gstrengthenC = Right
 
 -- | Strengthen sum types by casing and strengthening left or right.
 instance
@@ -87,11 +69,11 @@ instance (GStrengthenS 0 w s, ReifyCstrs wcd wcn scd scn)
         (C1 (MetaCons scn _smc2 _smc3) s) where
     gstrengthenC (M1 w) =
         case gstrengthenS @0 w of
-          Success s  -> Success (M1 s)
-          Failure es -> failStrengthen [reifyCstrs @wcd @wcn @scd @scn] es
+          Right s -> Right (M1 s)
+          Left  e -> failStrengthen [reifyCstrs @wcd @wcn @scd @scn] e
 
-class ReifyCstrs (ld :: Symbol) (lc :: Symbol) (rd :: Symbol) (rc :: Symbol) where
-    reifyCstrs :: TBL.Builder
+type ReifyCstrs :: Symbol -> Symbol -> Symbol -> Symbol -> Constraint
+class ReifyCstrs ld lc rd rc where reifyCstrs :: TBL.Builder
 
 -- | Special case: data type and constructor names are equivalent: simplify
 instance {-# OVERLAPPING #-} (KnownSymbol d, KnownSymbol c)
@@ -114,10 +96,10 @@ instance (KnownSymbol ld, KnownSymbol lc, KnownSymbol rd, KnownSymbol rc)
 
 -- | Generic strengthening at the constructor level.
 class GStrengthenS (i :: Natural) w s where
-    gstrengthenS :: w p -> Validation [(TBL.Builder, StrengthenFailure)] (s p)
+    gstrengthenS :: w p -> Either [(TBL.Builder, StrengthenFailure')] (s p)
 
 -- | Nothing to do for empty constructors.
-instance GStrengthenS i U1 U1 where gstrengthenS = Success
+instance GStrengthenS i U1 U1 where gstrengthenS = Right
 
 -- | Strengthen product types by strengthening left and right.
 instance
@@ -125,9 +107,17 @@ instance
   , GStrengthenS (i + ProdArity wl) wr sr
   ) => GStrengthenS i (wl :*: wr) (sl :*: sr) where
     gstrengthenS (l :*: r) =
-        A.liftA2 (:*:)
-               (gstrengthenS @i                  l)
-               (gstrengthenS @(i + ProdArity wl) r)
+        -- With @Validation@, @A.liftA2 (:*:)@. But I don't have a use for it
+        -- elsewhere, so let's just be explicit.
+        case gstrengthenS @i l of
+          Right la ->
+            case gstrengthenS @(i + ProdArity wl) r of
+              Right  ra -> Right (la :*: ra)
+              Left   re -> Left re
+          Left  le ->
+            case gstrengthenS @(i + ProdArity wl) @_ @sr r of
+              Right _ra -> Left le
+              Left   re -> Left (le <> re)
 
 -- | Special case: if source and target types are equivalent, just replace meta.
 --
@@ -137,7 +127,7 @@ instance
 instance {-# OVERLAPPING #-} GStrengthenS i
   (S1 (MetaSel _wms1 _wms2 _wms3 _wms4) (Rec0 a))
   (S1 (MetaSel _sms1 _sms2 _sms3 _sms4) (Rec0 a)) where
-    gstrengthenS = Success . M1 . unM1
+    gstrengthenS = Right . M1 . unM1
 
 -- | Strengthen a field using the existing 'Strengthen' instance.
 instance
@@ -148,8 +138,8 @@ instance
         (S1 (MetaSel wmr _wms2 _wms3 _wms4) (Rec0 w))
         (S1 (MetaSel smr _sms2 _sms3 _sms4) (Rec0 s)) where
     gstrengthenS = unM1 .> unK1 .> strengthen .> \case
-      Success s -> Success $ M1 $ K1 s
-      Failure e -> Failure [(reifySelector @i @wmr @smr, e)]
+      Right s -> Right $ M1 $ K1 s
+      Left  e -> Left  [(reifySelector @i @wmr @smr, e)]
 
 {- TODO
 * how to separate index and record name? @.@ is good and bad, uses same syntax

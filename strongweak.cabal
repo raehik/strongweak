@@ -57,9 +57,8 @@ library
   ghc-options: -Wall -Wno-unticked-promoted-constructors
   build-depends:
       base >=4.18 && <5
-    , either >=5.0.1.1 && <5.1
     , rerefined >=0.5.0 && <0.6
-    , text >=1.2.5.0 && <2.2
+    , text >=2.0 && <2.2
     , text-builder-linear >=0.1.2 && <0.2
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.7
@@ -91,13 +90,12 @@ test-suite spec
   build-depends:
       QuickCheck >=2.14.2 && <2.16
     , base >=4.18 && <5
-    , either >=5.0.1.1 && <5.1
     , generic-random >=1.5.0.1 && <1.6
     , hspec >=2.7 && <2.12
     , quickcheck-instances >=0.3.26 && <0.4
     , rerefined >=0.5.0 && <0.6
     , strongweak
-    , text >=1.2.5.0 && <2.2
+    , text >=2.0 && <2.2
     , text-builder-linear >=0.1.2 && <0.2
     , vector >=0.12.3.1 && <0.14
     , vector-sized >=1.5.0 && <1.7

@@ -1,12 +1,6 @@
 # strongweak to-dos
 * split into base definitions and orphan instances?
-  * base needs either, acc, text and prettyprinter
 * deleted generic failure tests because clumsy. kinda sad but idk :(
-* clean up Validation. I don't think we need it any more-- except it might be
-  handy in generic strengthening. but probably we can and should just do some
-  casing there to save on dependencies
-  * if we do need it, consider instead:
-    https://hackage.haskell.org/package/validation-selective
 
 ## Failures: Pretty refinement failures require exposing `Doc` early
 rerefined refinement failures return an ADT, which is something. But we can't

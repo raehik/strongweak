@@ -2,7 +2,6 @@ module Strongweak.LawsSpec ( spec ) where
 
 import Strongweak
 import Common
-import Data.Either.Validation
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
@@ -14,6 +13,6 @@ spec = modifyMaxSize (+1000) $ do
     prop "strengthen-weaken-strengthen roundtrip partial isomorphism (generic)" $ do
       \(dw :: DS 'Weak) ->
         case strengthen @(DS 'Strong) dw of
-          Failure{}  -> pure ()
-          Success ds ->
+          Right ds ->
             strengthen (weaken ds) `shouldSatisfy` tryStrengthenSuccessEq ds
+          Left{}  -> pure ()

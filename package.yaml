@@ -62,8 +62,7 @@ dependencies:
 - base >= 4.18 && < 5
 
 # strengthening
-- either ^>= 5.0.1.1 # for Validation
-- text >= 1.2.5.0 && <2.2
+- text >= 2.0 && < 2.2
 - text-builder-linear ^>= 0.1.2
 
 # instances

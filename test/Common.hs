@@ -1,7 +1,7 @@
 module Common where
 
 import Strongweak
-import Strongweak.Strengthen qualified as Strengthen
+import Strongweak.Strengthen
 import Strongweak.Generic
 import Rerefined
 import Rerefined.Predicates
@@ -11,7 +11,6 @@ import Test.QuickCheck ( Arbitrary )
 import Numeric.Natural ( Natural )
 import Data.Word
 import Test.QuickCheck.Instances.Natural()
-import Data.Either.Validation
 
 data DS (s :: Strength)
   = DS0 (SW s Word8) (SW s Word8) Word8 (SW s Word8) (SW s Word8)
@@ -52,5 +51,5 @@ instance Weaken     (DP 'Strong) where
     weaken = weakenGeneric
 instance Strengthen (DP 'Strong) where strengthen = strengthenGeneric
 
-tryStrengthenSuccessEq :: Eq a => a -> Strengthen.Result a -> Bool
-tryStrengthenSuccessEq a = \case Success a' -> a == a'; Failure{} -> False
+tryStrengthenSuccessEq :: Eq a => a -> Either StrengthenFailure' a -> Bool
+tryStrengthenSuccessEq a = \case Right a' -> a == a'; Left{} -> False
