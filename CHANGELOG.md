@@ -1,3 +1,9 @@
+## 0.8.0 (2024-06-11)
+* no longer use `Validation`: failures now must wrap explicitly instead of being
+  implicitly collated
+* fix some bounds (`text` lower bound was too low)
+* various tweaks
+
 ## 0.7.1 (2024-05-27)
 * bump meta/dependencies
 
