@@ -33,6 +33,22 @@
         "type": "github"
       }
     },
+    "linear-builder": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1720637713,
+        "narHash": "sha256-utDoofUwo4rlkMefgrzB47TBemVhVj6FoJwRgpTHq3o=",
+        "owner": "Bodigrim",
+        "repo": "linear-builder",
+        "rev": "23a07e4d070cc55a45231c2f9b5659692d2fcdc0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Bodigrim",
+        "repo": "linear-builder",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1715037484,
@@ -81,6 +97,7 @@
       "inputs": {
         "flake-parts": "flake-parts",
         "haskell-flake": "haskell-flake",
+        "linear-builder": "linear-builder",
         "nixpkgs": "nixpkgs",
         "rerefined": "rerefined",
         "singleraeh": "singleraeh",

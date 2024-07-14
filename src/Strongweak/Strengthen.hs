@@ -128,12 +128,15 @@ instance Strengthen (NonEmpty a) where
 
 -- | Strengthen a plain list into a sized vector by asserting length.
 instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
-    -- TODO another case of TBL not supporting unbounded integrals
+    -- as of text-linear-builder-0.1.3, we can use 'fromUnboundedDec' for the
+    -- phantom vector size
+    -- I don't believe you can actually ever construct a vector with size
+    -- greater than @'maxBound' \@'Int'@. but still!
     strengthen as =
         case VGS.fromList as of
           Just va -> Right va
           Nothing -> failStrengthen1 $
-            [ "type: [a] -> Vector v "<>fromString (show n)<>" a"
+            [ "type: [a] -> Vector v "<>TBL.fromUnboundedDec n<>" a"
             , "fail: wrong length (got "<>TBL.fromDec (length as)<>")" ]
       where n = natVal'' @n
 
@@ -168,12 +171,10 @@ instance Strengthen Int64  where strengthen = strengthenBounded
 --
 -- @n@ must be "wider" than @m@.
 --
--- @'FiniteBits' m@ and @'Show' n@ are for error printing. We're forced to
--- @'Show' n@ because linear-text-builder can't print unbounded integrals. PR:
--- https://github.com/Bodigrim/linear-builder/pull/20
+-- @'FiniteBits' m@ is for error printing.
 strengthenBounded
     :: forall m n
-    .  ( Typeable n, Integral n, Show n
+    .  ( Typeable n, Integral n
        , Typeable m, Integral m, Bounded m, FiniteBits m
        ) => n -> Either StrengthenFailure' m
 strengthenBounded n
@@ -182,7 +183,7 @@ strengthenBounded n
         [ "numeric strengthen: "<>fromString (show (typeRep' @n))
           <>" -> "<>fromString (show (typeRep' @m))
         , "bounds check does not hold: "
-          <>TBL.fromDec minBm<>" <= "<>fromString (show n)
+          <>TBL.fromDec minBm<>" <= "<>TBL.fromUnboundedDec n
           <>" <= "<>TBL.fromDec maxBm
         ]
   where

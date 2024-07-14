@@ -14,6 +14,8 @@
     type-level-show.flake = false;
     singleraeh.url   = "github:raehik/singleraeh";
     singleraeh.flake = false;
+    linear-builder.url   = "github:Bodigrim/linear-builder";
+    linear-builder.flake = false;
   };
   outputs = inputs:
   let
@@ -39,6 +41,7 @@
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
           packages.singleraeh.source = inputs.singleraeh;
+          packages.text-builder-linear.source = inputs.linear-builder;
           devShell = nondevDevShell "ghc98";
         };
         haskellProjects.ghc96 = {
@@ -46,6 +49,7 @@
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
           packages.singleraeh.source = inputs.singleraeh;
+          packages.text-builder-linear.source = inputs.linear-builder;
           devShell.mkShellArgs.name = "ghc96-strongweak";
         };
         haskellProjects.ghc94 = {
@@ -53,6 +57,7 @@
           packages.rerefined.source = inputs.rerefined;
           packages.type-level-show.source = inputs.type-level-show;
           packages.singleraeh.source = inputs.singleraeh;
+          packages.text-builder-linear.source = inputs.linear-builder;
           devShell = nondevDevShell "ghc94";
         };
       };
