@@ -22,6 +22,13 @@
       perSystem = { self', pkgs, config, ... }: {
         packages.default  = self'.packages.ghc98-strongweak;
         devShells.default = self'.devShells.ghc98;
+        haskellProjects.ghc910 = {
+          basePackages = pkgs.haskell.packages.ghc910;
+          packages.finite-typelits.source = "0.2.1.0";
+          packages.vector-sized.source = "1.6.1";
+          settings.defun-core.jailbreak = true;
+          devShell = defDevShell "ghc910";
+        };
         haskellProjects.ghc98 = {
           basePackages = pkgs.haskell.packages.ghc98;
           devShell = defDevShell "ghc98";
