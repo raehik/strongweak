@@ -5,11 +5,11 @@
         "nixpkgs-lib": "nixpkgs-lib"
       },
       "locked": {
-        "lastModified": 1714641030,
-        "narHash": "sha256-yzcRNDoyVP7+SCNX0wmuDju1NUCt8Dz9+lyUXEI0dbI=",
+        "lastModified": 1726153070,
+        "narHash": "sha256-HO4zgY0ekfwO5bX0QH/3kJ/h4KvUDFZg8YpkNwIbg1U=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "e5d10a24b66c3ea8f150e47dfdb0416ab7c3390e",
+        "rev": "bcef6817a8b2aa20a5a6dbb19b43e63c5bf8619a",
         "type": "github"
       },
       "original": {
@@ -20,42 +20,26 @@
     },
     "haskell-flake": {
       "locked": {
-        "lastModified": 1714886475,
-        "narHash": "sha256-mHXGbESaMbS8gJ8+DtJwgaJLtpGKYAYgXqUzAgf/O70=",
+        "lastModified": 1725811060,
+        "narHash": "sha256-lmPoWYNT8kI8LSTa0Z3id38SoR05+05IEZ3fxeIwOzE=",
         "owner": "srid",
         "repo": "haskell-flake",
-        "rev": "d06c68deaed203b6fd172e18fc6cacfee45f748c",
+        "rev": "9b490fe01ec8f6858f43d3cc81bfbbd0000eb29e",
         "type": "github"
       },
       "original": {
         "owner": "srid",
         "repo": "haskell-flake",
-        "type": "github"
-      }
-    },
-    "linear-builder": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1720637713,
-        "narHash": "sha256-utDoofUwo4rlkMefgrzB47TBemVhVj6FoJwRgpTHq3o=",
-        "owner": "Bodigrim",
-        "repo": "linear-builder",
-        "rev": "23a07e4d070cc55a45231c2f9b5659692d2fcdc0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Bodigrim",
-        "repo": "linear-builder",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1715037484,
-        "narHash": "sha256-OUt8xQFmBU96Hmm4T9tOWTu4oCswCzoVl+pxSq/kiFc=",
+        "lastModified": 1726042813,
+        "narHash": "sha256-LnNKCCxnwgF+575y0pxUdlGZBO/ru1CtGHIqQVfvjlA=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ad7efee13e0d216bf29992311536fce1d3eefbef",
+        "rev": "159be5db480d1df880a0135ca0bfed84c2f88353",
         "type": "github"
       },
       "original": {
@@ -67,73 +51,21 @@
     },
     "nixpkgs-lib": {
       "locked": {
-        "lastModified": 1714640452,
-        "narHash": "sha256-QBx10+k6JWz6u7VsohfSw8g8hjdBZEf8CFzXH1/1Z94=",
+        "lastModified": 1725233747,
+        "narHash": "sha256-Ss8QWLXdr2JCBPcYChJhz4xJm+h/xjl4G0c0XlP6a74=",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/50eb7ecf4cd0a5756d7275c8ba36790e5bd53e33.tar.gz"
+        "url": "https://github.com/NixOS/nixpkgs/archive/356624c12086a18f2ea2825fed34523d60ccc4e3.tar.gz"
       },
       "original": {
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/50eb7ecf4cd0a5756d7275c8ba36790e5bd53e33.tar.gz"
-      }
-    },
-    "rerefined": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1716795307,
-        "narHash": "sha256-QUsLls71yHLTqzBgpqZt0s56bqHgwDv772W8VNblbO8=",
-        "owner": "raehik",
-        "repo": "rerefined",
-        "rev": "f73a3684e70dd438e2499025648c0e9c09821ab3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "raehik",
-        "repo": "rerefined",
-        "type": "github"
+        "url": "https://github.com/NixOS/nixpkgs/archive/356624c12086a18f2ea2825fed34523d60ccc4e3.tar.gz"
       }
     },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
         "haskell-flake": "haskell-flake",
-        "linear-builder": "linear-builder",
-        "nixpkgs": "nixpkgs",
-        "rerefined": "rerefined",
-        "singleraeh": "singleraeh",
-        "type-level-show": "type-level-show"
-      }
-    },
-    "singleraeh": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1716794733,
-        "narHash": "sha256-loR72mt0Yyi8TYFIC6xJHoU3wqhZnnex2NV77YcP6DY=",
-        "owner": "raehik",
-        "repo": "singleraeh",
-        "rev": "00d2591737626ca68151093e3e6d1df8caba35ca",
-        "type": "github"
-      },
-      "original": {
-        "owner": "raehik",
-        "repo": "singleraeh",
-        "type": "github"
-      }
-    },
-    "type-level-show": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1716673073,
-        "narHash": "sha256-J8u2IZ6KRK4WhmeKdgt7lccu1zn0v6W/JjleRaIAaGA=",
-        "owner": "raehik",
-        "repo": "type-level-show",
-        "rev": "0222e198092bd682f1e4c1715d8be36ebcce025f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "raehik",
-        "repo": "type-level-show",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
