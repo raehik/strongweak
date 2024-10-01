@@ -1,4 +1,5 @@
 # strongweak to-dos
+* OOPS overlap between `Weak :: Weaken a => Type` and `Weak :: Strength`
 * split into base definitions and orphan instances?
 * deleted generic failure tests because clumsy. kinda sad but idk :(
 
