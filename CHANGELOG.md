@@ -1,3 +1,6 @@
+## Unreleased
+* fix `Strengthen [a]` instance reversing list
+
 ## 0.8.0 (2024-06-11)
 * no longer use `Validation`: failures now must wrap explicitly instead of being
   implicitly collated

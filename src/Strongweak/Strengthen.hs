@@ -198,6 +198,7 @@ strengthenBounded n
 instance Strengthen a => Strengthen [a] where
     strengthen = strengthenList
 
+-- TODO using reverse, SLOW!! >:(
 strengthenList :: Strengthen a => [Weak a] -> Either StrengthenFailure' [a]
 strengthenList = goR (0 :: Int) [] . map strengthen
   where
@@ -206,7 +207,7 @@ strengthenList = goR (0 :: Int) [] . map strengthen
         case r of
           Right a -> goR (i+1) (a:as) rs
           Left  e -> goL (i+1) [(TBL.fromDec i, e)]    rs
-      []   -> Right as
+      []   -> Right (reverse as)
     goL i es = \case
       r:rs ->
         case r of
