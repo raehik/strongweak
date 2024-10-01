@@ -61,11 +61,28 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/356624c12086a18f2ea2825fed34523d60ccc4e3.tar.gz"
       }
     },
+    "rerefined": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1727796801,
+        "narHash": "sha256-UKkK0PmBg4lLCbc9IKDJggpBwq3Wx2P9gb/897KAsuY=",
+        "owner": "raehik",
+        "repo": "rerefined",
+        "rev": "a1df4c118a97ff2efc538301fe62980e72921fe1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "raehik",
+        "repo": "rerefined",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
         "haskell-flake": "haskell-flake",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "rerefined": "rerefined"
       }
     }
   },
