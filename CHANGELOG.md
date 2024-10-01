@@ -1,5 +1,6 @@
-## Unreleased
+## 0.9.0 (2024-10-01)
 * fix `Strengthen [a]` instance reversing list
+* support GHC 9.4 - GHC 9.8
 
 ## 0.8.0 (2024-06-11)
 * no longer use `Validation`: failures now must wrap explicitly instead of being
