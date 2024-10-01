@@ -1,3 +1,6 @@
+## 0.9.1 (2024-10-01)
+* update rerefined dependency
+
 ## 0.9.0 (2024-10-01)
 * fix `Strengthen [a]` instance reversing list
 * support GHC 9.4 - GHC 9.8
