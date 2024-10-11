@@ -1,6 +1,6 @@
 module Strongweak.Strengthen.Unsafe where
 
-import Strongweak.Weaken
+import Strongweak.Weaken ( Weaken(Weakened) )
 import Data.Word
 import Data.Int
 import Rerefined.Refine
@@ -12,7 +12,7 @@ import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 
-{- | Unsafely transform a @'Weak' a@ to an @a@, without asserting invariants.
+{- | Unsafely transform a @'Weakened' a@ to an @a@, without asserting invariants.
 
 Naturally, you must only even /consider/ using this if you have a guarantee that
 your value is safe to treat as strong.
@@ -31,8 +31,8 @@ doesn't fit in its strong counterpart? That depends on the strengthen.
 See "Strongweak" for class design notes and laws.
 -}
 class Weaken a => UnsafeStrengthen a where
-    -- | Unsafely transform a @'Weak' a@ to its associated strong type @a@.
-    unsafeStrengthen :: Weak a -> a
+    -- | Unsafely transform a @'Weakened' a@ to its associated strong type @a@.
+    unsafeStrengthen :: Weakened a -> a
 
 -- | Add a refinement to a type without checking the associated predicate.
 instance UnsafeStrengthen (Refined p a) where

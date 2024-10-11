@@ -32,7 +32,7 @@ instance {-# OVERLAPPING #-} GWeaken (Rec0 s) (Rec0 s) where
     gweaken = id
 
 -- | Weaken a field using the existing 'Weaken' instance.
-instance (Weaken s, Weak s ~ w) => GWeaken (Rec0 s) (Rec0 w) where
+instance (Weaken s, Weakened s ~ w) => GWeaken (Rec0 s) (Rec0 w) where
     gweaken = K1 . weaken . unK1
 
 -- | Weaken product types by weakening left and right.

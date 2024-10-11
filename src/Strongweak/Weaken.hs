@@ -30,10 +30,10 @@ See "Strongweak" for class design notes and laws.
 -}
 class Weaken a where
     -- | The weakened type for some type.
-    type Weak a :: Type
+    type Weakened a :: Type
 
-    -- | Weaken some @a@ to its associated weak type @'Weak' a@.
-    weaken :: a -> Weak a
+    -- | Weaken some @a@ to its associated weak type @'Weakened' a@.
+    weaken :: a -> Weakened a
 
 -- | Strength enumeration: is it strong, or weak?
 --
@@ -42,7 +42,7 @@ data Strength = Strong | Weak
 
 -- | Lift a function on a weak type to the associated strong type by weakening
 --   first.
-liftWeakF :: Weaken a => (Weak a -> b) -> (a -> b)
+liftWeakF :: Weaken a => (Weakened a -> b) -> (a -> b)
 liftWeakF f = f . weaken
 
 {- | Get either the strong or weak representation of a type, depending on the
@@ -59,93 +59,93 @@ data A (s :: Strength) = A
 @
 -}
 type family SW (s :: Strength) a :: Type where
-    SW 'Strong a = a
-    SW 'Weak   a = Weak a
+    SW Strong a =          a
+    SW Weak   a = Weakened a
 
 -- | Track multiple levels of weakening. Silly thought I had, don't think it's
 --   useful.
 type family SWDepth (n :: Natural) a :: Type where
     SWDepth 0 a = a
-    SWDepth n a = Weak (SWDepth (n-1) a)
+    SWDepth n a = Weakened (SWDepth (n-1) a)
 
 -- | Strip refined type refinement.
-instance Weaken (Refined p a) where
-    type Weak (Refined p a) = a
+instance Weaken   (Refined p a) where
+    type Weakened (Refined p a) = a
     weaken = unrefine
 
 -- | Strip refined functor type refinement.
-instance Weaken (Refined1 p f a) where
-    type Weak (Refined1 p f a) = f a
+instance Weaken   (Refined1 p f a) where
+    type Weakened (Refined1 p f a) = f a
     weaken = unrefine1
 
 -- | Weaken non-empty lists into plain lists.
-instance Weaken (NonEmpty a) where
-    type Weak (NonEmpty a) = [a]
+instance Weaken   (NonEmpty a) where
+    type Weakened (NonEmpty a) = [a]
     weaken = NonEmpty.toList
 
 -- | Weaken sized vectors into plain lists.
 instance VG.Vector v a => Weaken (VGS.Vector v n a) where
-    type Weak (VGS.Vector v n a) = [a]
+    type Weakened (VGS.Vector v n a) = [a]
     weaken = VGS.toList
 
 -- | Strip wrapper.
-instance Weaken (Identity a) where
-    type Weak (Identity a) = a
+instance Weaken   (Identity a) where
+    type Weakened (Identity a) = a
     weaken = runIdentity
 
 -- | Strip wrapper.
-instance Weaken (Const a b) where
-    type Weak (Const a b) = a
+instance Weaken   (Const a b) where
+    type Weakened (Const a b) = a
     weaken = getConst
 
 {- TODO controversial. seems logical, but also kinda annoying.
 -- | Weaken 'Maybe' (0 or 1) into '[]' (0 to n).
 instance Weaken (Maybe a) where
-    type Weak (Maybe a) = [a]
+    type Weakened (Maybe a) = [a]
     weaken = \case Just a  -> [a]
                    Nothing -> []
 -}
 
 -- Weaken the bounded Haskell numeric types using 'fromIntegral'.
-instance Weaken Word8  where
-    type Weak Word8  = Natural
+instance Weaken   Word8  where
+    type Weakened Word8  = Natural
     weaken = fromIntegral
-instance Weaken Word16 where
-    type Weak Word16 = Natural
+instance Weaken   Word16 where
+    type Weakened Word16 = Natural
     weaken = fromIntegral
-instance Weaken Word32 where
-    type Weak Word32 = Natural
+instance Weaken   Word32 where
+    type Weakened Word32 = Natural
     weaken = fromIntegral
-instance Weaken Word64 where
-    type Weak Word64 = Natural
+instance Weaken   Word64 where
+    type Weakened Word64 = Natural
     weaken = fromIntegral
-instance Weaken Int8   where
-    type Weak Int8   = Integer
+instance Weaken   Int8   where
+    type Weakened Int8   = Integer
     weaken = fromIntegral
-instance Weaken Int16  where
-    type Weak Int16  = Integer
+instance Weaken   Int16  where
+    type Weakened Int16  = Integer
     weaken = fromIntegral
-instance Weaken Int32  where
-    type Weak Int32  = Integer
+instance Weaken   Int32  where
+    type Weakened Int32  = Integer
     weaken = fromIntegral
-instance Weaken Int64  where
-    type Weak Int64  = Integer
+instance Weaken   Int64  where
+    type Weakened Int64  = Integer
     weaken = fromIntegral
 
 --------------------------------------------------------------------------------
 
 -- | Decomposer. Weaken every element in a list.
 instance Weaken a => Weaken [a] where
-    type Weak [a] = [Weak a]
+    type Weakened [a] = [Weakened a]
     weaken = map weaken
 
 -- | Decomposer. Weaken both elements of a tuple.
 instance (Weaken a, Weaken b) => Weaken (a, b) where
-    type Weak (a, b) = (Weak a, Weak b)
+    type Weakened (a, b) = (Weakened a, Weakened b)
     weaken (a, b) = (weaken a, weaken b)
 
 -- | Decomposer. Weaken either side of an 'Either'.
 instance (Weaken a, Weaken b) => Weaken (Either a b) where
-    type Weak (Either a b) = Either (Weak a) (Weak b)
+    type Weakened (Either a b) = Either (Weakened a) (Weakened b)
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b

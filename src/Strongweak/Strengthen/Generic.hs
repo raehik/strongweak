@@ -131,7 +131,7 @@ instance {-# OVERLAPPING #-} GStrengthenS i
 
 -- | Strengthen a field using the existing 'Strengthen' instance.
 instance
-  ( Weak s ~ w -- has to be here, else "illegal typesym family app in instance"
+  ( Weakened s ~ w -- required, else "illegal typesym family app in instance"
   , Strengthen s
   , ReifySelector i wmr smr
   ) => GStrengthenS i

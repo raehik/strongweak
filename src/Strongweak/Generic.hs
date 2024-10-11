@@ -18,7 +18,7 @@ module Strongweak.Generic
 import Strongweak.Weaken.Generic
 import Strongweak.Strengthen.Generic
 
-import Strongweak.Weaken ( Weaken(Weak, weaken) )
+import Strongweak.Weaken ( Weaken(Weakened, weaken) )
 import Strongweak.Strengthen ( Strengthen(strengthen) )
 import GHC.Generics
 import Data.Kind ( Type )
@@ -79,7 +79,7 @@ instance
   ( Generic s, Generic w
   , GWeaken (Rep s) (Rep w)
   ) => Weaken (GenericallySW s w) where
-    type Weak (GenericallySW s w) = w
+    type Weakened (GenericallySW s w) = w
     weaken = weakenGeneric . unGenericallySW
 
 instance

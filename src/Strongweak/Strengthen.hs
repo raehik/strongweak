@@ -17,11 +17,11 @@ module Strongweak.Strengthen
   , failStrengthen
 
   -- * Re-exports
-  , Strongweak.Weaken.Weak
+  , Strongweak.Weaken.Weakened
   ) where
 
 import Strongweak.Util.TypeNats ( natVal'' )
-import Strongweak.Weaken ( Weaken(..) )
+import Strongweak.Weaken ( Weaken(Weakened, weaken) )
 
 import GHC.TypeNats ( KnownNat )
 import Data.Word
@@ -52,9 +52,9 @@ are a little confusingly worded. Alas.
 See "Strongweak" for class design notes and laws.
 -}
 class Weaken a => Strengthen a where
-    -- | Attempt to strengthen some @'Weak' a@ to its associated strong type
+    -- | Attempt to strengthen some @'Weakened' a@ to its associated strong type
     --   @a@.
-    strengthen :: Weak a -> Either StrengthenFailure' a
+    strengthen :: Weakened a -> Either StrengthenFailure' a
 
 -- | Weaken a strong value, then strengthen it again.
 --
@@ -199,7 +199,7 @@ instance Strengthen a => Strengthen [a] where
     strengthen = strengthenList
 
 -- TODO using reverse, SLOW!! >:(
-strengthenList :: Strengthen a => [Weak a] -> Either StrengthenFailure' [a]
+strengthenList :: Strengthen a => [Weakened a] -> Either StrengthenFailure' [a]
 strengthenList = goR (0 :: Int) [] . map strengthen
   where
     goR i as = \case
