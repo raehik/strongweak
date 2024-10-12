@@ -14,7 +14,7 @@ import Test.QuickCheck.Instances.Natural()
 
 data DS (s :: Strength)
   = DS0 (SW s Word8) (SW s Word8) Word8 (SW s Word8) (SW s Word8)
-  | DS1 (SW s (Refined (CompareValue LT Pos 100) Natural))
+  | DS1 (SW s (Refined (CompareValue RelOpLT Pos 100) Natural))
     deriving stock (Generic)
 
 deriving stock instance Eq   (DS Strong)
@@ -32,7 +32,7 @@ instance Strengthen (DS Strong) where strengthen = strengthenGeneric
 
 data DP (s :: Strength) = DP
   { dp1f0 :: SW s Word32
-  , dp1f1 :: SW s (Refined (CompareValue GT Pos 42) Natural)
+  , dp1f1 :: SW s (Refined (CompareValue RelOpGT Pos 42) Natural)
   , dp1f2 :: SW s Word8
   , dp1f3 :: Word8
   , dp1f4 :: SW s Word8
