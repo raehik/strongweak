@@ -37,8 +37,8 @@ simplicity, brevity and performance, albeit for some conversion overhead.
 
 Let's formalize the above as a pair of types `S` and `W`.
 
-  * Given a `strong :: S`, we can always turn it into a `weak :: W`.
-  * Given a `weak :: W`, we can only turn it into a `strong :: S` if it passes
+  * given a `strong :: S`, we can always turn it into a `weak :: W`
+  * given a `weak :: W`, we can only turn it into a `strong :: S` if it passes
     all the checks
 
 We can write these as pure functions.
@@ -57,8 +57,8 @@ useful enough pattern. Let's think of some strongweak pairs:
   * `Word8` is a bounded natural number. `Natural` can represent any natural
     number. So `Natural` is a weak type, which can be strengthened into `Word8`
     (or `Word16`, `Word32`, ...) by asserting well-boundedness.
-  * `[a]` doesn't have state any predicates. But we could weaken every `a` in
-    the list. So `[a]` is a strong type, which can be weakened to `[Weak a]`.
+  * `[a]` doesn't state any predicates. But we could weaken every `a` in the
+    list. So `[a]` is a strong type, which can be weakened to `[Weak a]`.
   * `NonEmpty a` *does* have a predicate. For useability and other reasons, we
     only handle this predicate, and don't also weaken each `a` like above.
     `NonEmpty a` weakens to `[a]`.
@@ -77,13 +77,11 @@ behaviour. The primary definitions are below:
 
 ```haskell
 class Weaken a where
-    type Weak a :: Type
+    type Weakened a :: Type
     weaken :: a :: Weak a
 
-type Result = Validation Fails
-type Fails = NeAcc Fail
 class Weaken a => Strengthen a where
-    strengthen :: Weak a -> Result a
+    strengthen :: Weakened a -> Either Failure a
 ```
 
 Note that a strong type may have only one associated weak type. The same weak
@@ -139,6 +137,10 @@ types into a dictionary. A strong type has exactly one weak representation, and
 strengthening may fail while weakening cannot. For safe conversion enumeration
 via typeclasses, consider Taylor Fausak's
 [witch](https://hackage.haskell.org/package/witch) library.
+
+### Not a generic `coerce`
+strongweak isn't intended for automatic `coerce`ing between pairs of types.
+For that, check out `gcoerce` at Lysxia's generic-data package.
 
 ### Not particularly speedy
 The emphasis is on safety, which may come at the detriment of performance:
