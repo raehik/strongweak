@@ -41,7 +41,7 @@ import Data.Bits ( FiniteBits )
 
 import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
 
-{- | Attempt to strengthen some @'Weak' a@, asserting certain invariants.
+{- | Attempt to strengthen some @'Weakened' a@, asserting certain invariants.
 
 We take 'Weaken' as a superclass in order to maintain strong/weak type pair
 consistency. We choose this dependency direction because we treat the strong
