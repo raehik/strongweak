@@ -1,4 +1,4 @@
-## 0.10.0 (unreleased)
+## 0.10.0 (2024-10-13)
 * rename `Weak` to `Weakened`, to separate from `Weak :: Strength`
 * update rerefined dependency
 
