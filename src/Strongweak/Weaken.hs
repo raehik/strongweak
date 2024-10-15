@@ -10,6 +10,10 @@ module Strongweak.Weaken
   , Strength(..)
   , type SW
   , type SWDepth
+
+  , Coercibly(..)
+  , Coercibly1(..)
+  , Strategy(..)
   ) where
 
 import Rerefined
@@ -23,7 +27,8 @@ import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 import GHC.TypeNats
-import Data.Tagged ( Tagged(..) )
+
+import Data.Coerce
 
 {- | Weaken some @a@, relaxing certain invariants.
 
@@ -89,15 +94,8 @@ instance VG.Vector v a => Weaken (VGS.Vector v n a) where
     type Weakened (VGS.Vector v n a) = [a]
     weaken = VGS.toList
 
--- | Strip wrapper.
-instance Weaken   (Identity a) where
-    type Weakened (Identity a) = a
-    weaken = runIdentity
-
--- | Strip wrapper.
-instance Weaken   (Const a b) where
-    type Weakened (Const a b) = a
-    weaken = getConst
+deriving via Coercibly1 Shallow Identity    a instance Weaken (Identity a)
+deriving via Coercibly  Shallow (Const a b) a instance Weaken (Const a b)
 
 {- TODO controversial. seems logical, but also kinda annoying.
 -- | Weaken 'Maybe' (0 or 1) into '[]' (0 to n).
@@ -151,13 +149,46 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
 
--- | SPECIAL: Weaken through a 'Tagged'. That is, strip the 'Tagged' and weaken
---   the inner @a@.
---
--- This appears to contribute a useful role: we want to plug some newtype into
--- the strongweak ecosystem, but it would result in orphan instances. With this,
--- we can go through 'Tagged', and the phantom type helps us handle
--- parameterized newtypes (like @newtype 'ByteOrdered' (end :: 'ByteOrder') a@).
-instance Weaken a => Weaken (Tagged x a) where
-    type Weakened (Tagged x a) = Weakened a
-    weaken = weaken . unTagged
+-- note that without the Coercible instance, we get a confusing "couldn't match
+-- representation of type 'from' with that of 'to'" error message. this might
+-- happen in user code that tries to be parametric with 'Coercibly'
+
+-- | How to weaken a layer type.
+data Strategy
+  = Shallow -- ^ Remove the layer.
+  | Deep    -- ^ Remove the layer, and weaken the inner type.
+
+{- | A @from@ that can be safely coerced between @to@.
+
+You can use this to decide precisely how to weaken a newtype: whether to only
+strip the newtype via 'Shallow', or to strip the newtype and weaken the inner
+type via 'Deep'.
+-}
+newtype Coercibly (stg :: Strategy) (from :: Type) to
+  = Coercibly { unCoercibly :: from }
+    deriving stock Show
+
+-- | Remove the coercible @from@ layer.
+instance Coercible from to => Weaken (Coercibly Shallow from to) where
+    type Weakened (Coercibly Shallow from to) = to
+    weaken = coerce . unCoercibly
+
+-- | Remove the coercible @from@ layer and weaken the result.
+instance (Coercible from to, Weaken to) => Weaken (Coercibly Deep from to) where
+    type Weakened (Coercibly Deep from to) = Weakened to
+    weaken = weaken . coerce @from @to . unCoercibly
+
+-- | An @f a@ that can be safely coerced between @a@.
+newtype Coercibly1 (stg :: Strategy) f (a :: Type)
+  = Coercibly1 { unCoercibly1 :: f a }
+    deriving stock Show
+
+-- | Remove the coercible @f a@ layer.
+instance Coercible (f a) a => Weaken (Coercibly1 Shallow f a) where
+    type Weakened (Coercibly1 Shallow f a) = a
+    weaken = coerce . unCoercibly1
+
+-- | Remove the coercible @f a@ layer and weaken the result.
+instance (Coercible (f a) a, Weaken a) => Weaken (Coercibly1 Deep f a) where
+    type Weakened (Coercibly1 Deep f a) = Weakened a
+    weaken = weaken . coerce @(f a) @a . unCoercibly1

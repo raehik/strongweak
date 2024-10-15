@@ -21,7 +21,8 @@ module Strongweak.Strengthen
   ) where
 
 import Strongweak.Util.TypeNats ( natVal'' )
-import Strongweak.Weaken ( Weaken(Weakened, weaken) )
+import Strongweak.Weaken
+  ( Weaken(Weakened, weaken), Coercibly(..), Coercibly1(..), Strategy(..) )
 
 import GHC.TypeNats ( KnownNat )
 import Data.Word
@@ -41,7 +42,7 @@ import Data.Bits ( FiniteBits )
 
 import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
 
-import Data.Tagged ( Tagged(..) )
+import Data.Coerce
 
 {- | Attempt to strengthen some @'Weakened' a@, asserting certain invariants.
 
@@ -247,7 +248,18 @@ f .> g = g . f
 typeRep' :: forall a. Typeable a => TypeRep
 typeRep' = typeRep (Proxy @a)
 
--- | SPECIAL: Strengthen through a 'Tagged'. That is, strengthen @a@ then tag it
---   with @x@.
-instance Strengthen a => Strengthen (Tagged x a) where
-    strengthen = fmap Tagged <$> strengthen
+instance Coercible from to => Strengthen (Coercibly Shallow from to) where
+    strengthen = Right . Coercibly . coerce @to @from
+
+-- TODO wrap errors here?
+instance (Coercible from to, Strengthen to)
+  => Strengthen (Coercibly Deep from to) where
+    strengthen = fmap (Coercibly . coerce @to @from) <$> strengthen
+
+instance Coercible (f a) a => Strengthen (Coercibly1 Shallow f a) where
+    strengthen = Right . Coercibly1 . coerce @a @(f a)
+
+-- TODO wrap errors here?
+instance (Coercible (f a) a, Strengthen a)
+  => Strengthen (Coercibly1 Deep f a) where
+    strengthen = fmap (Coercibly1 . coerce @a @(f a)) <$> strengthen
