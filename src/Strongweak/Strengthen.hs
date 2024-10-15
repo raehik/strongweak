@@ -41,6 +41,8 @@ import Data.Bits ( FiniteBits )
 
 import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
 
+import Data.Tagged ( Tagged(..) )
+
 {- | Attempt to strengthen some @'Weakened' a@, asserting certain invariants.
 
 We take 'Weaken' as a superclass in order to maintain strong/weak type pair
@@ -244,3 +246,8 @@ f .> g = g . f
 
 typeRep' :: forall a. Typeable a => TypeRep
 typeRep' = typeRep (Proxy @a)
+
+-- | SPECIAL: Strengthen through a 'Tagged'. That is, strengthen @a@ then tag it
+--   with @x@.
+instance Strengthen a => Strengthen (Tagged x a) where
+    strengthen = fmap Tagged <$> strengthen

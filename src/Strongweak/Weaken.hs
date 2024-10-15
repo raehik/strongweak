@@ -23,6 +23,7 @@ import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 import GHC.TypeNats
+import Data.Tagged ( Tagged(..) )
 
 {- | Weaken some @a@, relaxing certain invariants.
 
@@ -149,3 +150,14 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     type Weakened (Either a b) = Either (Weakened a) (Weakened b)
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
+
+-- | SPECIAL: Weaken through a 'Tagged'. That is, strip the 'Tagged' and weaken
+--   the inner @a@.
+--
+-- This appears to contribute a useful role: we want to plug some newtype into
+-- the strongweak ecosystem, but it would result in orphan instances. With this,
+-- we can go through 'Tagged', and the phantom type helps us handle
+-- parameterized newtypes (like @newtype 'ByteOrdered' (end :: 'ByteOrder') a@).
+instance Weaken a => Weaken (Tagged x a) where
+    type Weakened (Tagged x a) = Weakened a
+    weaken = weaken . unTagged
