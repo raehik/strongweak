@@ -13,17 +13,20 @@ module Strongweak
   , Strengthen(..)
 
   -- * Other definitions
+  , WeakenN(..)
   , liftWeakF
 
   -- * Strength switch wrapper
   , Strength(..)
   , type SW
+  , type SWN
 
   ) where
 
 import Strongweak.Weaken
 import Strongweak.Strengthen
 import Strongweak.Strength
+import Strongweak.WeakenN
 
 {- $strongweak-instance-design
 
