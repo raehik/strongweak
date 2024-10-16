@@ -23,6 +23,7 @@ module Strongweak
 
 import Strongweak.Weaken
 import Strongweak.Strengthen
+import Strongweak.Strength
 
 {- $strongweak-instance-design
 

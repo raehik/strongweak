@@ -1,13 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-} -- type family 'Weakened' in constraints
-{-# LANGUAGE AllowAmbiguousTypes #-} -- TODO
+{-# LANGUAGE AllowAmbiguousTypes #-} -- ambiguous intermediate type classes
 
 module Strongweak.Chain where
 
-import Strongweak.Weaken
+import Strongweak.Weaken ( Weaken(weaken), type WeakenedN )
 import Strongweak.Strengthen
 import GHC.TypeNats
-
-import Unsafe.Coerce
+import Unsafe.Coerce ( unsafeCoerce )
 
 {- | When weakening (or strengthening), chain the operation @n@ times.
 

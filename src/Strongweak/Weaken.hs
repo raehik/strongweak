@@ -2,16 +2,10 @@
 
 module Strongweak.Weaken
   (
-  -- * 'Weaken' class
-    Weaken(..)
+    Weaken(Weakened, weaken)
   , type WeakenedN
   , liftWeakF
-
-  -- * Strength switch helper
-  , Strength(..)
-  , type SW
-
-  , ErrZeroInvariantNewtype'
+  , SWCoercibly(..)
   ) where
 
 import Rerefined
@@ -26,10 +20,6 @@ import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 import GHC.TypeNats
 
-import GHC.TypeError
-import Strongweak.Util.TypeErrors
-import GHC.TypeLits ( type Symbol )
-
 {- | Weaken some @a@, relaxing certain invariants.
 
 See "Strongweak" for class design notes and laws.
@@ -41,37 +31,31 @@ class Weaken a where
     -- | Weaken some @a@ to its associated weak type @'Weakened' a@.
     weaken :: a -> Weakened a
 
--- | Strength enumeration: is it strong, or weak?
---
--- Primarily interesting at the type level (using DataKinds).
-data Strength = Strong | Weak
-
 -- | Lift a function on a weak type to the associated strong type by weakening
 --   first.
 liftWeakF :: Weaken a => (Weakened a -> b) -> a -> b
 liftWeakF f = f . weaken
 
-{- | Get either the strong or weak representation of a type, depending on the
-     type-level "switch" provided.
-
-This is intended to be used in data types that take a 'Strength' type. Define
-your type using strong fields wrapped in @SW s@. You then get the weak
-representation for free, using the same definition.
-
-@
-data A (s :: Strength) = A
-  { a1 :: SW s Word8
-  , a2 :: String }
-@
--}
-type family SW (s :: Strength) a :: Type where
-    SW Strong a =          a
-    SW Weak   a = Weakened a
-
 -- | The type of @a@ after weakening @n@ times.
 type family WeakenedN (n :: Natural) a :: Type where
     WeakenedN 0 a = a
     WeakenedN n a = Weakened (WeakenedN (n-1) a)
+
+-- | A "via type" newtype for defining strongweak instances for zero-invariant,
+--   coercible newtypes.
+--
+-- Use like so:
+--
+-- @
+-- deriving via 'SWCoercibly' a instance 'Weaken' ('Identity' a)
+-- @
+newtype SWCoercibly a = SWCoercibly { unSWCoercibly :: a }
+instance Weaken (SWCoercibly a) where
+    type Weakened (SWCoercibly a) = a
+    weaken = unSWCoercibly
+
+deriving via SWCoercibly a instance Weaken (Identity a)
+deriving via SWCoercibly a instance Weaken (Const a b)
 
 -- | Strip refined type refinement.
 instance Weaken   (Refined p a) where
@@ -144,37 +128,3 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     type Weakened (Either a b) = Either (Weakened a) (Weakened b)
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
-
----
-
-newtype ErrZeroInvariantNewtype' (typeName :: Symbol) a
-  = ErrZeroInvariantNewtype' a
-instance Unsatisfiable (ErrZeroInvariantNewtype typeName)
-  => Weaken (ErrZeroInvariantNewtype' typeName a) where
-    type Weakened (ErrZeroInvariantNewtype' typeName a) =
-        TypeError (ErrZeroInvariantNewtype typeName)
-    weaken = unsatisfiable
-
---deriving via ErrZeroInvariantNewtype' "Identity" a
---  instance Weaken (Identity a)
-
-{- TODO 2024-10-16T04:21:22+0100
-aww this doesn't work haha. ok fine just gotta make some utils for filling out
-the context and Weakened associated type family for custom erroring instances
--}
-
-{-
-instance Unsatisfiable (ErrZeroInvariantNewtype "Identity")
-  => Weaken (Identity a) where
-    type Weakened (Identity a) = a
-    weaken = unsatisfiable
--}
-
--- TODO define custom errors using Unsatisfiable to point users to Coercibly
--- Unsatisfiable is base-4.19 -> GHC 9.8
---deriving via Coercibly1 Shallow Identity    a instance Weaken (Identity a)
---deriving via Coercibly  Shallow (Const a b) a instance Weaken (Const a b)
-
-instance Weaken (Identity a) where
-    type Weakened (Identity a) = a
-    weaken (Identity a) = a

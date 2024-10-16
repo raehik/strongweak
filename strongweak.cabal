@@ -32,8 +32,8 @@ library
       Strongweak
       Strongweak.Chain
       Strongweak.Coercibly
-      Strongweak.Example
       Strongweak.Generic
+      Strongweak.Strength
       Strongweak.Strengthen
       Strongweak.Strengthen.Generic
       Strongweak.Strengthen.Unsafe

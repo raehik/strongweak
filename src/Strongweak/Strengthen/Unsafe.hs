@@ -7,10 +7,12 @@ import Rerefined.Refine
 import Data.Vector.Generic.Sized qualified as VGS -- Shazbot!
 import Data.Vector.Generic qualified as VG
 import Data.Vector.Generic.Sized.Internal qualified
-import Data.Functor.Identity
-import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
+
+import Strongweak.Weaken ( SWCoercibly(..) )
+import Data.Functor.Identity
+import Data.Functor.Const
 
 {- | Unsafely transform a @'Weakened' a@ to an @a@, without asserting invariants.
 
@@ -33,6 +35,12 @@ See "Strongweak" for class design notes and laws.
 class Weaken a => UnsafeStrengthen a where
     -- | Unsafely transform a @'Weakened' a@ to its associated strong type @a@.
     unsafeStrengthen :: Weakened a -> a
+
+instance UnsafeStrengthen (SWCoercibly a) where
+    unsafeStrengthen = SWCoercibly
+
+deriving via SWCoercibly a instance UnsafeStrengthen (Identity a)
+deriving via SWCoercibly a instance UnsafeStrengthen (Const a b)
 
 -- | Add a refinement to a type without checking the associated predicate.
 instance UnsafeStrengthen (Refined p a) where

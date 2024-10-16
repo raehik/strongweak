@@ -20,8 +20,13 @@ module Strongweak.Strengthen
   , Strongweak.Weaken.Weakened
   ) where
 
+import Strongweak.Weaken ( Weaken(Weakened) )
+
+import Strongweak.Weaken ( Weaken(weaken) )
+
+import Strongweak.Weaken ( SWCoercibly(..) )
+
 import Strongweak.Util.TypeNats ( natVal'' )
-import Strongweak.Weaken ( Weaken(Weakened, weaken) )
 
 import GHC.TypeNats ( KnownNat )
 import Data.Word
@@ -100,6 +105,15 @@ failStrengthen t fs = Left $ StrengthenFailure t fs
 -- | Shorthand for failing a strengthen with no inner failures.
 failStrengthen1 :: [text] -> Either (StrengthenFailure text) a
 failStrengthen1 t = failStrengthen t []
+
+-- TODO add a via type for obtaining strengthen via unsafestrengthen :)
+-- should be permitted only for non-failing, zero invariant strengthens
+
+instance Strengthen (SWCoercibly a) where
+    strengthen = Right . SWCoercibly
+
+deriving via SWCoercibly a instance Strengthen (Identity a)
+deriving via SWCoercibly a instance Strengthen (Const a b)
 
 -- | Strengthen a type by refining it with a predicate.
 instance Refine p a => Strengthen (Refined p a) where
@@ -236,6 +250,3 @@ f .> g = g . f
 
 typeRep' :: forall a. Typeable a => TypeRep
 typeRep' = typeRep (Proxy @a)
-
-instance Strengthen (Identity a) where
-    strengthen = Right . Identity
