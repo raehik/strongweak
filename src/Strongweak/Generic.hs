@@ -30,11 +30,9 @@ between any /compatible/ pair of types. Compatibility is defined as follows:
 
   * Both types' generic representation (the SOP tree structure) match exactly.
   * For each leaf pair of types, either the types are identical, or the
-  appropriate instance exists to transform from source to target.
+    appropriate instance exists to transform from source to target.
 
-If they aren't compatible, the derivation will fail with a type error. I'm
-fairly certain that if it succeeds, your instance is guaranteed correct
-(assuming the instances it uses internally are all OK!).
+If they aren't compatible, the derivation will fail with a type error.
 
 I don't think GHC strongly guarantees the SOP property, so if you receive
 surprising derivation errors, the types might have differing generic
@@ -46,6 +44,11 @@ Also, generic strengthening requires that all metadata is present for both
 types: for the datatype, constructors and selectors. GHC will always add this
 metadata for you, but manually-derived Generic instances (which are usually a
 bad idea) do not require it.
+
+Note that the generics only handle one "layer" at a time. If you have a data
+type with nested 'Strongweak.Strengthen.SW' uses, these generics will fail with
+a type error. Write the instance manually instead. (I can't think of an easy way
+to handle this, but TODO all the same.)
 -}
 
 {- | @DerivingVia@ wrapper for strongweak instances.

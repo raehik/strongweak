@@ -30,10 +30,14 @@ source-repository head
 library
   exposed-modules:
       Strongweak
+      Strongweak.Chain
+      Strongweak.Coercibly
+      Strongweak.Example
       Strongweak.Generic
       Strongweak.Strengthen
       Strongweak.Strengthen.Generic
       Strongweak.Strengthen.Unsafe
+      Strongweak.Util.TypeErrors
       Strongweak.Util.TypeNats
       Strongweak.Weaken
       Strongweak.Weaken.Generic

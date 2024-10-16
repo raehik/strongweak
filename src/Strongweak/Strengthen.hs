@@ -21,8 +21,7 @@ module Strongweak.Strengthen
   ) where
 
 import Strongweak.Util.TypeNats ( natVal'' )
-import Strongweak.Weaken
-  ( Weaken(Weakened, weaken), Coercibly(..), Coercibly1(..), Strategy(..) )
+import Strongweak.Weaken ( Weaken(Weakened, weaken) )
 
 import GHC.TypeNats ( KnownNat )
 import Data.Word
@@ -41,8 +40,6 @@ import GHC.Exts ( fromString )
 import Data.Bits ( FiniteBits )
 
 import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
-
-import Data.Coerce
 
 {- | Attempt to strengthen some @'Weakened' a@, asserting certain invariants.
 
@@ -143,14 +140,6 @@ instance (VG.Vector v a, KnownNat n) => Strengthen (VGS.Vector v n a) where
             , "fail: wrong length (got "<>TBL.fromDec (length as)<>")" ]
       where n = natVal'' @n
 
--- | Add wrapper.
-instance Strengthen (Identity a) where
-    strengthen = Right . Identity
-
--- | Add wrapper.
-instance Strengthen (Const a b) where
-    strengthen = Right . Const
-
 {- TODO controversial. seems logical, but also kinda annoying.
 instance (Show a, Typeable a) => Strengthen (Maybe a) where
     strengthen = \case [a] -> pure $ Just a
@@ -248,18 +237,5 @@ f .> g = g . f
 typeRep' :: forall a. Typeable a => TypeRep
 typeRep' = typeRep (Proxy @a)
 
-instance Coercible from to => Strengthen (Coercibly Shallow from to) where
-    strengthen = Right . Coercibly . coerce @to @from
-
--- TODO wrap errors here?
-instance (Coercible from to, Strengthen to)
-  => Strengthen (Coercibly Deep from to) where
-    strengthen = fmap (Coercibly . coerce @to @from) <$> strengthen
-
-instance Coercible (f a) a => Strengthen (Coercibly1 Shallow f a) where
-    strengthen = Right . Coercibly1 . coerce @a @(f a)
-
--- TODO wrap errors here?
-instance (Coercible (f a) a, Strengthen a)
-  => Strengthen (Coercibly1 Deep f a) where
-    strengthen = fmap (Coercibly1 . coerce @a @(f a)) <$> strengthen
+instance Strengthen (Identity a) where
+    strengthen = Right . Identity

@@ -47,14 +47,6 @@ instance VG.Vector v a => UnsafeStrengthen (VGS.Vector v n a) where
     unsafeStrengthen =
         Data.Vector.Generic.Sized.Internal.Vector . VG.fromList
 
--- | Add wrapper.
-instance UnsafeStrengthen (Identity a) where
-    unsafeStrengthen = Identity
-
--- | Add wrapper.
-instance UnsafeStrengthen (Const a b) where
-    unsafeStrengthen = Const
-
 {- TODO controversial. seems logical, but also kinda annoying.
 -- | Unsafely grab either 0 or 1 elements from a list.
 instance UnsafeStrengthen (Maybe a) where

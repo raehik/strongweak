@@ -1,19 +1,17 @@
-{-# LANGUAGE UndecidableInstances #-} -- for SWDepth
+{-# LANGUAGE UndecidableInstances #-} -- for WeakenedN
 
 module Strongweak.Weaken
   (
   -- * 'Weaken' class
     Weaken(..)
+  , type WeakenedN
   , liftWeakF
 
   -- * Strength switch helper
   , Strength(..)
   , type SW
-  , type SWDepth
 
-  , Coercibly(..)
-  , Coercibly1(..)
-  , Strategy(..)
+  , ErrZeroInvariantNewtype'
   ) where
 
 import Rerefined
@@ -28,7 +26,9 @@ import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 import GHC.TypeNats
 
-import Data.Coerce
+import GHC.TypeError
+import Strongweak.Util.TypeErrors
+import GHC.TypeLits ( type Symbol )
 
 {- | Weaken some @a@, relaxing certain invariants.
 
@@ -48,7 +48,7 @@ data Strength = Strong | Weak
 
 -- | Lift a function on a weak type to the associated strong type by weakening
 --   first.
-liftWeakF :: Weaken a => (Weakened a -> b) -> (a -> b)
+liftWeakF :: Weaken a => (Weakened a -> b) -> a -> b
 liftWeakF f = f . weaken
 
 {- | Get either the strong or weak representation of a type, depending on the
@@ -68,11 +68,10 @@ type family SW (s :: Strength) a :: Type where
     SW Strong a =          a
     SW Weak   a = Weakened a
 
--- | Track multiple levels of weakening. Silly thought I had, don't think it's
---   useful.
-type family SWDepth (n :: Natural) a :: Type where
-    SWDepth 0 a = a
-    SWDepth n a = Weakened (SWDepth (n-1) a)
+-- | The type of @a@ after weakening @n@ times.
+type family WeakenedN (n :: Natural) a :: Type where
+    WeakenedN 0 a = a
+    WeakenedN n a = Weakened (WeakenedN (n-1) a)
 
 -- | Strip refined type refinement.
 instance Weaken   (Refined p a) where
@@ -93,9 +92,6 @@ instance Weaken   (NonEmpty a) where
 instance VG.Vector v a => Weaken (VGS.Vector v n a) where
     type Weakened (VGS.Vector v n a) = [a]
     weaken = VGS.toList
-
-deriving via Coercibly1 Shallow Identity    a instance Weaken (Identity a)
-deriving via Coercibly  Shallow (Const a b) a instance Weaken (Const a b)
 
 {- TODO controversial. seems logical, but also kinda annoying.
 -- | Weaken 'Maybe' (0 or 1) into '[]' (0 to n).
@@ -149,46 +145,36 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
 
--- note that without the Coercible instance, we get a confusing "couldn't match
--- representation of type 'from' with that of 'to'" error message. this might
--- happen in user code that tries to be parametric with 'Coercibly'
+---
 
--- | How to weaken a layer type.
-data Strategy
-  = Shallow -- ^ Remove the layer.
-  | Deep    -- ^ Remove the layer, and weaken the inner type.
+newtype ErrZeroInvariantNewtype' (typeName :: Symbol) a
+  = ErrZeroInvariantNewtype' a
+instance Unsatisfiable (ErrZeroInvariantNewtype typeName)
+  => Weaken (ErrZeroInvariantNewtype' typeName a) where
+    type Weakened (ErrZeroInvariantNewtype' typeName a) =
+        TypeError (ErrZeroInvariantNewtype typeName)
+    weaken = unsatisfiable
 
-{- | A @from@ that can be safely coerced between @to@.
+--deriving via ErrZeroInvariantNewtype' "Identity" a
+--  instance Weaken (Identity a)
 
-You can use this to decide precisely how to weaken a newtype: whether to only
-strip the newtype via 'Shallow', or to strip the newtype and weaken the inner
-type via 'Deep'.
+{- TODO 2024-10-16T04:21:22+0100
+aww this doesn't work haha. ok fine just gotta make some utils for filling out
+the context and Weakened associated type family for custom erroring instances
 -}
-newtype Coercibly (stg :: Strategy) (from :: Type) to
-  = Coercibly { unCoercibly :: from }
-    deriving stock Show
 
--- | Remove the coercible @from@ layer.
-instance Coercible from to => Weaken (Coercibly Shallow from to) where
-    type Weakened (Coercibly Shallow from to) = to
-    weaken = coerce . unCoercibly
+{-
+instance Unsatisfiable (ErrZeroInvariantNewtype "Identity")
+  => Weaken (Identity a) where
+    type Weakened (Identity a) = a
+    weaken = unsatisfiable
+-}
 
--- | Remove the coercible @from@ layer and weaken the result.
-instance (Coercible from to, Weaken to) => Weaken (Coercibly Deep from to) where
-    type Weakened (Coercibly Deep from to) = Weakened to
-    weaken = weaken . coerce @from @to . unCoercibly
+-- TODO define custom errors using Unsatisfiable to point users to Coercibly
+-- Unsatisfiable is base-4.19 -> GHC 9.8
+--deriving via Coercibly1 Shallow Identity    a instance Weaken (Identity a)
+--deriving via Coercibly  Shallow (Const a b) a instance Weaken (Const a b)
 
--- | An @f a@ that can be safely coerced between @a@.
-newtype Coercibly1 (stg :: Strategy) f (a :: Type)
-  = Coercibly1 { unCoercibly1 :: f a }
-    deriving stock Show
-
--- | Remove the coercible @f a@ layer.
-instance Coercible (f a) a => Weaken (Coercibly1 Shallow f a) where
-    type Weakened (Coercibly1 Shallow f a) = a
-    weaken = coerce . unCoercibly1
-
--- | Remove the coercible @f a@ layer and weaken the result.
-instance (Coercible (f a) a, Weaken a) => Weaken (Coercibly1 Deep f a) where
-    type Weakened (Coercibly1 Deep f a) = Weakened a
-    weaken = weaken . coerce @(f a) @a . unCoercibly1
+instance Weaken (Identity a) where
+    type Weakened (Identity a) = a
+    weaken (Identity a) = a
