@@ -51,7 +51,7 @@ with the overall design. Here is some relevant guidance.
 If you want to handle multiple invariants, chain the weakens/strengthens.
 You may do this by nesting 'SW' uses, but you will then have to write your own
 instances, as the generics cannot handle such chaining. Alternatively, you may
-use 'SWChain'. This will add another newtype layer to the strong representation,
+use 'WeakenN'. This will add another newtype layer to the strong representation,
 but the generics are happy with it.
 
 Some types may not have any invariants which may be usefully relaxed e.g.
@@ -67,18 +67,4 @@ necessarily what you want - indeed, it appears this sort of design would require
 a @'Weak' a = a, weaken = id@ overlapping instance, which I do not want. On the
 other hand, @[a]@ /does/ weaken to @['Weak' a]@, because there are no invariants
 present to remove, so decomposing is all the user could hope to do.
-
-Another problem is coercible newtypes such as @Tagged@ from the @tagged@
-package. These have no invariants for us to weaken, so one's knee-jerk reaction
-might be to weaken the inner type. But what if the user doesn't want to weaken
-that inner type? They might be happy with using 'Data.Word.Word' instead of
-'Numeric.Natural.Natural', for example.
-
-strongweak provides a special type 'Coercibly' which permits precisely defining
-how to weaken a newtype/pair of coercible types. For this reason, zero-invariant
-coercible newtypes are excluded from the strongweak ecosystem (e.g.
-'Data.Functor.Identity.Identity', 'Data.Functor.Const.Const', @Tagged@).
-
-If your newtype puts the wrapped type as the final type variable, use
-'Coercibly1' for a considerably simpler invocation.
 -}

@@ -1,3 +1,8 @@
+## 0.11.0 (2024-10-17)
+* add `WeakenN` and `SWN` for chaining weakenings
+* clarify instance design: even zero-invariant coercible newtypes aren't allowed
+  to recursively weaken their inner type!
+
 ## 0.10.0 (2024-10-13)
 * rename `Weak` to `Weakened`, to separate from `Weak :: Strength`
 * update rerefined dependency
