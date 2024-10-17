@@ -14,6 +14,7 @@ module Strongweak
 
   -- * Other definitions
   , WeakenN(..)
+  , SWCoercibly(..)
   , liftWeakF
 
   -- * Strength switch wrapper
