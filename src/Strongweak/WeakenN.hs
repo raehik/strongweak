@@ -28,6 +28,7 @@ And so on. (This type is only much use from @n = 2@ onwards.)
 -}
 newtype WeakenN (n :: Natural) a = WeakenN { unWeakenN :: a }
     deriving stock Show
+    deriving (Ord, Eq) via a
 
 instance WeakenWeakenN n a => Weaken (WeakenN n a) where
     type Weakened (WeakenN n a) = WeakenedN n a
