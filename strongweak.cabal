@@ -30,6 +30,7 @@ source-repository head
 library
   exposed-modules:
       Strongweak
+      Strongweak.Chain
       Strongweak.Generic
       Strongweak.Strength
       Strongweak.Strengthen
@@ -38,8 +39,6 @@ library
       Strongweak.Util.TypeNats
       Strongweak.Weaken
       Strongweak.Weaken.Generic
-      Strongweak.WeakenN
-      Strongweak.WeakenN.Internal
   other-modules:
       Paths_strongweak
   hs-source-dirs:

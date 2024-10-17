@@ -1,9 +1,11 @@
 {-# LANGUAGE UndecidableInstances #-} -- for WeakenedN
+{-# LANGUAGE AllowAmbiguousTypes #-} -- for weakenN
 
 module Strongweak.Weaken
   (
     Weaken(Weakened, weaken)
   , type WeakenedN
+  , WeakenN(weakenN)
   , liftWeakF
   , SWCoercibly(..)
   ) where
@@ -19,6 +21,8 @@ import Data.Functor.Const
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.List.NonEmpty ( NonEmpty )
 import GHC.TypeNats
+
+import Unsafe.Coerce ( unsafeCoerce )
 
 {- | Weaken some @a@, relaxing certain invariants.
 
@@ -128,3 +132,23 @@ instance (Weaken a, Weaken b) => Weaken (Either a b) where
     type Weakened (Either a b) = Either (Weakened a) (Weakened b)
     weaken = \case Left  a -> Left  $ weaken a
                    Right b -> Right $ weaken b
+
+class WeakenN (n :: Natural) a where
+    weakenN :: a -> WeakenedN n a
+
+-- | Zero case: return the value as-is.
+instance {-# OVERLAPPING #-} WeakenN 0 a where
+    weakenN = id
+
+-- | Inductive case. @n /= 0@, else this explodes.
+instance (Weaken a, WeakenN (n-1) (Weakened a))
+  => WeakenN n a where
+    weakenN a =
+        case weakenN @(n-1) @(Weakened a) (weaken a) of
+          x -> weakenedNRL1 @n @a x
+
+-- | Inverted inductive 'WeakenedN'case.
+--
+-- @n@ must not be 0.
+weakenedNRL1 :: forall n a. WeakenedN (n-1) (Weakened a) -> WeakenedN n a
+weakenedNRL1 = unsafeCoerce

@@ -10,10 +10,12 @@ module Strongweak
 
   -- * Classes
     Weaken(..)
+  , weakenN
   , Strengthen(..)
+  , strengthenN
 
   -- * Other definitions
-  , WeakenN(..)
+  , SWChain(..)
   , SWCoercibly(..)
   , liftWeakF
 
@@ -27,7 +29,7 @@ module Strongweak
 import Strongweak.Weaken
 import Strongweak.Strengthen
 import Strongweak.Strength
-import Strongweak.WeakenN
+import Strongweak.Chain
 
 {- $strongweak-instance-design
 

@@ -1,3 +1,9 @@
+## 0.12.0 (unreleased)
+* rename `WeakenN` to `SWChain`
+* export previous `SWChain` internals `weakenN` and `strengthenN` for magical
+  strongweak chaining (!)
+  * no need to write `weaken . weaken . weaken` when `weakenN @3` will do!
+
 ## 0.11.0 (2024-10-17)
 * add `WeakenN` and `SWN` for chaining weakenings
 * clarify instance design: even zero-invariant coercible newtypes aren't allowed

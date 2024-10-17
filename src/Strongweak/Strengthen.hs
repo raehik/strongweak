@@ -1,11 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE AllowAmbiguousTypes #-} -- StrengthenN, and typeRep'
+-- StrengthenN type families in constraints
+{-# LANGUAGE UndecidableInstances #-}
 
 module Strongweak.Strengthen
   (
   -- * 'Strengthen' class
     Strengthen(..)
   , restrengthen
+  , StrengthenN(strengthenN)
 
   -- ** Helpers
   , strengthenBounded
@@ -45,6 +48,11 @@ import GHC.Exts ( fromString )
 import Data.Bits ( FiniteBits )
 
 import Data.Typeable ( Typeable, TypeRep, typeRep, Proxy(Proxy) )
+
+-- for strengthenN
+import GHC.TypeNats ( type Natural, type (-) )
+import Strongweak.Weaken ( type WeakenedN, WeakenN )
+import Unsafe.Coerce ( unsafeCoerce )
 
 {- | Attempt to strengthen some @'Weakened' a@, asserting certain invariants.
 
@@ -250,3 +258,22 @@ f .> g = g . f
 
 typeRep' :: forall a. Typeable a => TypeRep
 typeRep' = typeRep (Proxy @a)
+
+class WeakenN n a => StrengthenN (n :: Natural) a where
+    strengthenN :: WeakenedN n a -> Either StrengthenFailure' a
+
+instance {-# OVERLAPPING #-} StrengthenN 0 a where
+    strengthenN = Right
+
+instance (Strengthen a, StrengthenN (n-1) (Weakened a))
+  => StrengthenN n a where
+    strengthenN a =
+        case strengthenN @(n-1) @(Weakened a) (weakenedNLR1 @n @a a) of
+          Left  e  -> Left e
+          Right sa -> strengthen sa
+
+-- | Inductive 'WeakenedN'case.
+--
+-- @n@ must not be 0.
+weakenedNLR1 :: forall n a. WeakenedN n a -> WeakenedN (n-1) (Weakened a)
+weakenedNLR1 = unsafeCoerce
