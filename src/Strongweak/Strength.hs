@@ -1,9 +1,14 @@
+-- | Definitions using a type-level strength switch.
+
 module Strongweak.Strength where
 
 import Strongweak.Weaken ( type Weakened )
 import Data.Kind ( type Type )
 
--- | Strength enumeration: is it strong, or weak?
+import Strongweak.WeakenN
+import GHC.TypeNats ( type Natural )
+
+-- | Strength enumeration: it's either strong, or weak.
 --
 -- Primarily interesting at the type level (using DataKinds).
 data Strength = Strong | Weak
@@ -24,3 +29,6 @@ data A (s :: Strength) = A
 type family SW (s :: Strength) a :: Type where
     SW Strong a =          a
     SW Weak   a = Weakened a
+
+-- | Shortcut for a 'SW'-wrapped 'WeakenN'.
+type SWN (s :: Strength) (n :: Natural) a = SW s (WeakenN n a)
