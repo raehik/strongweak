@@ -45,14 +45,24 @@ type family WeakenedN (n :: Natural) a :: Type where
     WeakenedN 0 a = a
     WeakenedN n a = Weakened (WeakenedN (n-1) a)
 
--- | A "via type" newtype for defining strongweak instances for zero-invariant,
---   coercible newtypes.
---
--- Use like so:
---
--- @
--- deriving via 'SWCoercibly' a instance 'Weaken' ('Identity' a)
--- @
+{- | A "via type" newtype for defining strongweak instances for zero-invariant,
+     coercible newtypes.
+
+Use like so:
+
+@
+deriving 'Weaken' via 'SWCoercibly' a
+@
+
+Or standalone:
+
+@
+via 'SWCoercibly' a instance 'Weaken' ('Identity' a)
+@
+
+Note that usage of this incurs UndecidableInstances. That's life. You can
+write the trivial instances this generates yourself if you so wish
+-}
 newtype SWCoercibly a = SWCoercibly { unSWCoercibly :: a }
 instance Weaken (SWCoercibly a) where
     type Weakened (SWCoercibly a) = a
