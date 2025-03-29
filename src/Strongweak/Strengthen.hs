@@ -272,7 +272,7 @@ instance (Strengthen a, StrengthenN (n-1) (Weakened a))
           Left  e  -> Left e
           Right sa -> strengthen sa
 
--- | Inductive 'WeakenedN'case.
+-- | Inductive 'WeakenedN' case.
 --
 -- @n@ must not be 0.
 weakenedNLR1 :: forall n a. WeakenedN n a -> WeakenedN (n-1) (Weakened a)

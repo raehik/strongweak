@@ -61,7 +61,7 @@ via 'SWCoercibly' a instance 'Weaken' ('Identity' a)
 @
 
 Note that usage of this incurs UndecidableInstances. That's life. You can
-write the trivial instances this generates yourself if you so wish
+write the trivial instances this generates yourself if you so wish.
 -}
 newtype SWCoercibly a = SWCoercibly { unSWCoercibly :: a }
 instance Weaken (SWCoercibly a) where
