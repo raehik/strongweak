@@ -1,5 +1,6 @@
-## 0.12.0 (unreleased)
+## 0.12.0 (2025-03-29)
 * rename `WeakenN` to `SWChain`
+* remove `SWN`, don't like
 * export previous `SWChain` internals `weakenN` and `strengthenN` for magical
   strongweak chaining (!)
   * no need to write `weaken . weaken . weaken` when `weakenN @3` will do!
