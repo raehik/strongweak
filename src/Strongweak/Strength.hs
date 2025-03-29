@@ -5,9 +5,6 @@ module Strongweak.Strength where
 import Strongweak.Weaken ( type Weakened )
 import Data.Kind ( type Type )
 
-import Strongweak.Chain
-import GHC.TypeNats ( type Natural )
-
 -- | Strength enumeration: it's either strong, or weak.
 --
 -- Primarily interesting at the type level (using DataKinds).
@@ -29,6 +26,3 @@ data A (s :: Strength) = A
 type family SW (s :: Strength) a :: Type where
     SW Strong a =          a
     SW Weak   a = Weakened a
-
--- | Shortcut for a 'SW'-wrapped 'SWChain'.
-type SWN (s :: Strength) (n :: Natural) a = SW s (SWChain n a)

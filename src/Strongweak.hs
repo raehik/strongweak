@@ -22,7 +22,6 @@ module Strongweak
   -- * Strength switch wrapper
   , Strength(..)
   , type SW
-  , type SWN
 
   ) where
 
