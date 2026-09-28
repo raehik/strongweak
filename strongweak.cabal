@@ -88,11 +88,11 @@ test-suite spec
   build-tool-depends:
       hspec-discover:hspec-discover >=2.7 && <2.12
   build-depends:
-      QuickCheck >=2.14.2 && <2.16
+      QuickCheck >=2.14.2 && <2.19
     , base >=4.18 && <5
     , generic-random >=1.5.0.1 && <1.6
     , hspec >=2.7 && <2.12
-    , quickcheck-instances >=0.3.26 && <0.4
+    , quickcheck-instances >=0.3.26 && <0.5
     , rerefined >=0.8.0 && <0.9
     , strongweak
     , text >=2.0 && <2.2
